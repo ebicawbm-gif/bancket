@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="color-scheme" content="light dark">
-  <title>宴会 見込み原価（開始/終了在庫） - Sample D</title>
+  <title>宴会 見込み原価（開始/終了在庫） - Sample E</title>
 
   <style>
     :root{
@@ -106,7 +106,6 @@
       max-width:1150px;
       margin:0 auto;
     }
-
     .grid{ display:grid; gap:12px; }
 
     .card{
@@ -157,7 +156,44 @@
     .small{ font-size:12px; color:var(--muted); line-height:1.5; }
     .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace; }
 
-    /* KPI：通常は可変 */
+    /* 進行UI */
+    .stageWrap{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
+    }
+    .seg{
+      display:inline-flex;
+      border:1px solid var(--line);
+      border-radius:999px;
+      overflow:hidden;
+      background: color-mix(in oklab, var(--card) 90%, var(--bg));
+    }
+    .seg button{
+      border:none;
+      border-right:1px solid var(--line);
+      border-radius:0;
+      padding:10px 14px;
+      font-size:13px;
+      background:transparent;
+      color:var(--muted);
+    }
+    .seg button:last-child{ border-right:none; }
+    .seg button.active{
+      color:var(--text);
+      background: color-mix(in oklab, var(--accent) 10%, var(--card));
+    }
+    .statusDot{
+      width:10px; height:10px; border-radius:50%;
+      background: color-mix(in oklab, var(--warn) 70%, transparent);
+      display:inline-block;
+    }
+    .statusDot.ok{ background: color-mix(in oklab, #22c55e 70%, transparent); }
+    .statusDot.run{ background: color-mix(in oklab, var(--accent) 70%, transparent); }
+
+    /* KPI */
     .kpiGrid{
       display:grid;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -219,7 +255,6 @@
       text-align:center;
     }
 
-    /* controls：通常は3カラム（開始/終了/使用原価） */
     .controls{
       display:grid;
       grid-template-columns: 1fr 1fr 1fr;
@@ -233,7 +268,6 @@
       padding:10px;
       background: color-mix(in oklab, var(--card) 92%, var(--bg));
     }
-
     .ctrlBox.startBox{
       background: color-mix(in oklab, #ef4444 7%, var(--card));
       border-color: color-mix(in oklab, #ef4444 22%, var(--line));
@@ -241,6 +275,10 @@
     .ctrlBox.endBox{
       background: color-mix(in oklab, #3b82f6 7%, var(--card));
       border-color: color-mix(in oklab, #3b82f6 22%, var(--line));
+    }
+    .ctrlBox.readonly{
+      opacity:.92;
+      filter:saturate(.9);
     }
 
     .ctrlTitle{
@@ -287,7 +325,16 @@
       height:48px;
     }
 
-    /* 使用/原価：通常も「箱」にして見やすく（右に飛んだ感を減らす） */
+    .roQty{
+      height:48px;
+      border-radius:12px;
+      border:1px solid var(--line);
+      background: color-mix(in oklab, var(--card) 78%, var(--bg));
+      display:flex; align-items:center; justify-content:center;
+      font-size:18px;
+      font-weight:800;
+    }
+
     .usedBox{
       border:1px solid var(--line);
       border-radius:14px;
@@ -311,7 +358,6 @@
       gap:12px;
     }
 
-    /* スマホ等 */
     @media (max-width: 980px){
       .prodRow{ grid-template-columns: 1fr; }
       .controls{ grid-template-columns: 1fr; }
@@ -319,26 +365,12 @@
       .masterSplit{ grid-template-columns: 1fr; }
     }
 
-    /* ★第7世代iPad横向き（だいたい 1024px 幅）を狙った最適化 */
+    /* iPad横（ざっくり） */
     @media (min-width: 900px) and (max-width: 1100px) and (orientation: landscape){
-      main{
-        max-width:1024px;
-        padding:12px;
-      }
+      main{ max-width:1024px; padding:12px; }
+      .kpiGrid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .prodRow{ grid-template-columns: 360px 1fr; gap:12px; }
 
-      /* KPIが横に伸びすぎないよう 2列固定 */
-      .kpiGrid{
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-
-      /* 商品行：情報を少し固定して、操作を安定させる */
-      .prodRow{
-        grid-template-columns: 360px 1fr;
-        gap:12px;
-      }
-
-      /* “右に吹っ飛ぶ”感の原因＝3カラムの右端に使用原価が寄るので
-         iPad横は「開始/終了 上段2列、使用/原価 下段全幅」に変更 */
       .controls{
         grid-template-columns: 1fr 1fr;
         grid-template-areas:
@@ -348,23 +380,13 @@
       }
       .startArea{ grid-area:start; }
       .endArea{ grid-area:end; }
-      .usedArea{
-        grid-area:used;
-        align-items:flex-start;
-      }
-      .usedBox{
-        align-items:flex-start;
-      }
+      .usedArea{ grid-area:used; }
+      .usedBox{ align-items:flex-start; }
 
-      /* Master画面：左フォーム/右一覧 で安定 */
-      .masterSplit{
-        grid-template-columns: 420px 1fr;
-        align-items:start;
-      }
-
-      /* 操作部ほんの少し大きく（横向きでタップしやすい） */
+      .masterSplit{ grid-template-columns: 420px 1fr; align-items:start; }
       .stepBtn{ height:52px; }
       .qtyInput{ height:52px; font-size:19px; }
+      .roQty{ height:52px; font-size:19px; }
     }
   </style>
 </head>
@@ -372,7 +394,7 @@
 <body>
 <header>
   <div class="top">
-    <h1>宴会 見込み原価（開始/終了在庫）- Sample D</h1>
+    <h1>宴会 見込み原価（開始/終了在庫）- Sample E</h1>
     <div class="topRight">
       <button id="btnTheme" class="themeBtn" title="テーマ切替">☀️ <span class="mono" style="font-size:12px;">LIGHT</span></button>
       <div class="pill"><span id="authState">未ログイン</span> <span class="mono" id="deviceId">—</span></div>
@@ -404,11 +426,47 @@
         <button class="ghost" id="btnLogout">ログアウト</button>
         <button class="ghost" id="btnReloadAll">データ再読込</button>
       </div>
-      <div class="small">※同一アカウントでログインしている複数iPad間で、マスタ/宴会が自動同期します（Realtime）。</div>
+      <div class="small">※同一アカウントでログインしている複数iPad間で、マスタ/宴会下書きが自動同期します（Realtime）。</div>
     </div>
 
+    <!-- 進行（下書き） -->
     <div class="card">
-      <h2 style="margin:0 0 10px; font-size:15px;">宴会 入力（開始在庫 / 終了在庫 → 差分で見込み原価）</h2>
+      <div class="stageWrap">
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+          <span class="statusDot" id="draftDot"></span>
+          <div>
+            <div style="font-size:14px; font-weight:800;">進行：<span id="stageLabel">開始入力</span></div>
+            <div class="small mono" id="draftInfo">下書き：未保存</div>
+          </div>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+          <div class="seg">
+            <button id="btnStageStart" class="active" type="button">開始入力</button>
+            <button id="btnStageEnd" type="button">終了入力</button>
+          </div>
+          <button class="ghost" id="btnDraftSave" type="button">途中保存（同期）</button>
+          <button class="danger" id="btnDraftClear" type="button">下書きを削除</button>
+        </div>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="btnbar" style="margin-top:0;">
+        <button class="primary" id="btnConfirmStart" type="button">開始を確定（同期して保存）→ 終了入力へ</button>
+        <button class="ghost" id="btnBackToStart" type="button">開始を編集し直す（終了入力を破棄）</button>
+        <button class="primary" id="btnFinishEvent" type="button">宴会を完了して保存（eventに確定）</button>
+      </div>
+
+      <div class="small" style="margin-top:8px;">
+        ✅開始は「確定」するとロックされ、閉じてもOK。終了時に開いて終了在庫だけ入れれば完了。<br>
+        ※複数端末で同時編集は上書きし合うので、基本は「担当1台」で運用推奨。
+      </div>
+    </div>
+
+    <!-- 予約情報 -->
+    <div class="card">
+      <h2 style="margin:0 0 10px; font-size:15px;">宴会 情報（開始確定後はロック）</h2>
 
       <div class="row">
         <div>
@@ -459,7 +517,7 @@
 
       <div class="kpiGrid">
         <div class="kpi">
-          <div class="t">この宴会 見込み原価（差分入力分）</div>
+          <div class="t">見込み原価（終了入力分のみ）</div>
           <div class="v mono" id="kpiThisCost">¥0</div>
           <div class="small" id="kpiMissingEnds">未入力 0</div>
         </div>
@@ -483,24 +541,23 @@
         </div>
       </div>
 
-      <div class="btnbar">
-        <button class="ghost" id="btnResetStart">開始を全て0</button>
-        <button class="ghost" id="btnClearEnd">終了を全て未入力</button>
-        <button class="primary" id="btnSaveEvent">宴会を保存（開始/終了を丸ごと保存）</button>
-        <button class="ghost" id="btnNewEvent">新規入力に戻す</button>
+      <div class="small" style="margin-top:10px;">
+        開始入力モード：開始だけ入れて「開始確定」→ 終了入力モード：終了だけ入れて「完了して保存」。
       </div>
+    </div>
 
-      <div class="hr"></div>
-
-      <div class="small" style="margin-bottom:8px;">
-        「開始（赤系）」と「終了（青系）」を入力します（0.1 / 1.0の増減ボタン + 直接入力）。<br>
-        iPad横向きでは “使用/原価” が下段に来るので右に飛びません。
+    <!-- 商品入力 -->
+    <div class="card">
+      <h2 style="margin:0 0 10px; font-size:15px;">商品入力</h2>
+      <div class="small" style="margin-bottom:8px;" id="productsHint">
+        開始モード：開始在庫を入力します（終了は後で）。終了モード：開始は固定、終了在庫を入力します。
       </div>
 
       <div id="products" class="list"></div>
       <div id="noProducts" class="small">商品マスタが空です。「商品マスタ」タブで先に登録してください。</div>
     </div>
 
+    <!-- 一覧 -->
     <div class="card">
       <h2 style="margin:0 0 10px; font-size:15px;">宴会一覧（保存済み）＋累計</h2>
 
@@ -594,9 +651,6 @@
           <button class="primary" id="btnAddMaster">マスタに追加</button>
           <button class="ghost" id="btnSaveMaster">マスタを保存（同期）</button>
         </div>
-
-        <div class="hr"></div>
-        <div class="small">※iPad横向きでは「左：登録 / 右：一覧」表示で固定されます。</div>
       </div>
 
       <div class="card">
@@ -618,7 +672,6 @@
       </div>
 
       <div class="btnbar">
-        <button class="ghost" id="btnRegenDevice">端末ID再生成</button>
         <button class="ghost" id="btnDump">現在の内部データをログに出す</button>
       </div>
 
@@ -635,9 +688,13 @@
   // =======================
   // ここだけ差し替え
   // =======================
-  const SUPABASE_URL = "https://pftjjrluhdbovoaxnykn.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBmdGpqcmx1aGRib3ZvYXhueWtuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMzUzMTUsImV4cCI6MjA4NjcxMTMxNX0.qX-LpvYcbu589h96FdxJmUEqYto64wniBcuGXraJaoU";
+  const SUPABASE_URL = "https://xxxxx.supabase.co";
+  const SUPABASE_ANON_KEY = "YOUR_ANON_KEY";
   // =======================
+
+  const DRAFT_KIND = "event_draft";
+  const DRAFT_KEY  = "active";
+  const LOCAL_DRAFT_KEY = "banquet_draft_v1";
 
   const { createClient } = supabase;
   const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -691,11 +748,18 @@
   let master = { version:1, items:[], lastSavedAt:null, lastSavedBy:null };
   let masterRowUpdatedAt = null;
 
-  // draft maps (10x for 0.1 precision)
-  let editingEventId = null;
+  let events = [];
+
+  // draft state
+  let stage = "start"; // "start" or "end"
+  let draftServerUpdatedAt = null;
+  let draftSavedAt = null;
+  let draftSavedBy = null;
+  let draftDirty = false;
+
+  // qty maps (10x for 0.1 precision)
   let start10 = {}; // itemId -> int
   let end10 = {};   // itemId -> int | null (null=未入力)
-  let events = [];
 
   function log(msg, obj){
     const line = `[${new Date().toISOString()}] ${msg}` + (obj ? `\n${JSON.stringify(obj,null,2)}` : "");
@@ -728,6 +792,11 @@
     return Number.isFinite(n) ? n : null;
   }
   function to10(x){ return Math.round(Number(x||0) * 10); }
+  function escapeHtml(s){
+    return String(s ?? "").replace(/[&<>"']/g, m => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+    }[m]));
+  }
 
   async function getUser(){
     const { data, error } = await sb.auth.getUser();
@@ -779,81 +848,15 @@
     return data;
   }
 
-  function initDraftMaps(){
+  function initQtyMaps(){
     const s = {};
     const e = {};
     (master.items || []).forEach(it => {
-      s[it.id] = s[it.id] ?? 0;
-      e[it.id] = (e[it.id] === undefined) ? null : e[it.id];
+      s[it.id] = (start10[it.id] ?? 0);
+      e[it.id] = (end10[it.id] === undefined) ? null : end10[it.id];
     });
-    start10 = { ...s, ...start10 };
-    end10 = { ...e, ...end10 };
-  }
-
-  async function loadMaster(){
-    const u = await refreshAuthState();
-    if(!u) return;
-
-    const row = await ensureMasterRow();
-    master = row.payload || { version:1, items:[] };
-    masterRowUpdatedAt = row.updated_at || null;
-
-    $("masterUpdated").textContent = masterRowUpdatedAt || "—";
-    log("master loaded", { items: master.items?.length || 0, updated_at: masterRowUpdatedAt });
-
-    initDraftMaps();
-    renderMaster();
-    renderProducts();
-    recalcDraftKpi();
-  }
-
-  async function saveMaster(){
-    const u = await getUser();
-    if(!u) return alert("先にログインして");
-
-    master.lastSavedAt = new Date().toISOString();
-    master.lastSavedBy = getOrCreateDeviceId();
-
-    const { data, error } = await sb
-      .from("docs")
-      .upsert({
-        user_id: u.id,
-        kind: "master",
-        doc_key: "main",
-        payload: master
-      }, { onConflict: "user_id,kind,doc_key" })
-      .select("updated_at")
-      .single();
-
-    if(error){
-      log("saveMaster error", error);
-      return alert("マスタ保存エラー: " + error.message);
-    }
-    masterRowUpdatedAt = data.updated_at || null;
-    $("masterUpdated").textContent = masterRowUpdatedAt || "—";
-    log("master saved", { updated_at: masterRowUpdatedAt });
-    alert("マスタを保存して同期しました");
-  }
-
-  async function loadEvents(){
-    const u = await refreshAuthState();
-    if(!u) return;
-
-    const { data, error } = await sb
-      .from("docs")
-      .select("doc_key, payload, created_at, updated_at")
-      .eq("kind", "event")
-      .order("created_at", { ascending: false })
-      .limit(400);
-
-    if(error){
-      log("loadEvents error", error);
-      return alert("宴会読み込みエラー: " + error.message);
-    }
-    events = data || [];
-    $("eventsCount").textContent = String(events.length);
-    renderEvents();
-    log("events loaded", { count: events.length });
+    start10 = { ...s };
+    end10 = { ...e };
   }
 
   function updateDurationUI(){
@@ -897,7 +900,7 @@
     return { total, usedItemCount, missingEnds, negativeCount };
   }
 
-  function recalcDraftKpi(){
+  function recalcKpi(){
     const { total, usedItemCount, missingEnds, negativeCount } = calcDraft();
     const sales = getDraftSalesYen();
 
@@ -916,11 +919,15 @@
       $("kpiSalesHint").textContent = "人数と単価を入れると計算";
     }
 
-    const status = (missingEnds === 0) ? "状態：確定" : "状態：未確定（終了未入力あり）";
+    const status =
+      (stage === "start")
+        ? "状態：開始入力中（終了未入力）"
+        : ((missingEnds === 0) ? "状態：確定（保存可能）" : "状態：未確定（終了未入力あり）");
     $("kpiThisStatus").textContent = status;
   }
 
-  function buildEventPayload(){
+  // ===== draft payload =====
+  function buildDraftPayload(){
     const date = $("evDate").value || todayISO();
     const guests = parseIntSafe($("evGuests").value);
     const drinkPricePerHeadYen = parseIntSafe($("evDrinkPrice").value);
@@ -936,168 +943,267 @@
       .filter(Boolean)
       .slice(0, 2);
 
-    const items = [];
-    let totalCostYen = 0;
-    let missingEnds = 0;
-    let negativeCount = 0;
-
-    for(const it of (master.items || [])){
-      const s10 = start10[it.id] || 0;
-      const e10 = end10[it.id];
-
-      const hasStart = s10 !== 0;
-      const hasEnd = !(e10 === null || e10 === undefined);
-
-      if(!hasStart && !hasEnd) continue;
-
-      let used10 = null;
-      let costItemYen = 0;
-
-      if(!hasEnd){
-        missingEnds++;
-      }else{
-        used10 = s10 - e10;
-        if(used10 < 0) negativeCount++;
-        const used = used10 / 10;
-        if(used > 0){
-          costItemYen = Math.round(used * Number(it.costYen || 0));
-          totalCostYen += costItemYen;
-        }
-      }
-
-      items.push({
-        itemId: it.id,
-        startQty: Number((s10/10).toFixed(1)),
-        endQty: hasEnd ? Number((e10/10).toFixed(1)) : null,
-        usedQty: (used10 === null) ? null : Number((used10/10).toFixed(1)),
-        costItemYen
-      });
-    }
-
-    const isComplete = (missingEnds === 0);
-    const costRate = (salesYen && salesYen > 0) ? (totalCostYen / salesYen) : null;
-
+    const now = new Date().toISOString();
     return {
-      version: 2,
-      date,
-      guests: guests ?? null,
-      drinkPricePerHeadYen: drinkPricePerHeadYen ?? null,
-      salesYen,
-      costRate,
-      drinkBaseMin: 90,
-      extensionCount: ext,
-      durationMin,
-      style,
-      staff,
-      items,
-      totalCostYen: Math.round(totalCostYen),
-      missingEnds,
-      negativeCount,
-      isComplete,
-      savedAt: new Date().toISOString(),
+      version: 1,
+      stage,
+      meta: {
+        date,
+        guests: guests ?? null,
+        drinkPricePerHeadYen: drinkPricePerHeadYen ?? null,
+        salesYen,
+        extensionCount: ext,
+        durationMin,
+        style,
+        staff
+      },
+      start10,
+      end10,
+      savedAt: now,
       savedBy: getOrCreateDeviceId()
     };
   }
 
-  function resetDraft(){
-    editingEventId = null;
-    $("evDate").value = todayISO();
-    $("evGuests").value = "";
-    $("evDrinkPrice").value = "";
-    $("evExt").value = "0";
-    $("evStyle").value = "seated";
-    $("evStaff").value = "";
+  function applyDraftPayload(p){
+    if(!p || typeof p !== "object") return;
 
-    (master.items || []).forEach(it => {
-      start10[it.id] = 0;
-      end10[it.id] = null;
-    });
+    stage = (p.stage === "end") ? "end" : "start";
 
+    const m = p.meta || {};
+    $("evDate").value = m.date || todayISO();
+    $("evGuests").value = (m.guests ?? "") === null ? "" : String(m.guests ?? "");
+    $("evDrinkPrice").value = (m.drinkPricePerHeadYen ?? "") === null ? "" : String(m.drinkPricePerHeadYen ?? "");
+    $("evExt").value = String(m.extensionCount ?? 0);
+    $("evStyle").value = m.style || "seated";
+    $("evStaff").value = (m.staff || []).join(", ");
+
+    start10 = (p.start10 && typeof p.start10 === "object") ? p.start10 : {};
+    end10 = (p.end10 && typeof p.end10 === "object") ? p.end10 : {};
+
+    draftSavedAt = p.savedAt || null;
+    draftSavedBy = p.savedBy || null;
+    draftDirty = false;
+
+    initQtyMaps();
     updateDurationUI();
+    updateStageUI();
     renderProducts();
-    recalcDraftKpi();
+    recalcKpi();
   }
 
-  async function saveEvent(){
+  function loadLocalDraft(){
+    const raw = localStorage.getItem(LOCAL_DRAFT_KEY);
+    if(!raw) return null;
+    try{
+      return JSON.parse(raw);
+    }catch{
+      return null;
+    }
+  }
+
+  function saveLocalDraft(p){
+    localStorage.setItem(LOCAL_DRAFT_KEY, JSON.stringify(p));
+  }
+
+  function clearLocalDraft(){
+    localStorage.removeItem(LOCAL_DRAFT_KEY);
+  }
+
+  // ===== remote draft (supabase) =====
+  let draftSaveTimer = null;
+  let draftSaving = false;
+
+  async function loadRemoteDraft(){
+    const u = await getUser();
+    if(!u) return null;
+
+    const { data, error } = await sb
+      .from("docs")
+      .select("payload, updated_at")
+      .eq("kind", DRAFT_KIND)
+      .eq("doc_key", DRAFT_KEY)
+      .limit(1)
+      .maybeSingle();
+
+    if(error){
+      log("loadRemoteDraft error", error);
+      return null;
+    }
+    if(!data) return null;
+
+    draftServerUpdatedAt = data.updated_at || null;
+    return data.payload || null;
+  }
+
+  async function saveRemoteDraft(immediate=false){
+    const u = await getUser();
+    if(!u) return;
+
+    if(draftSaving) return;
+    draftSaving = true;
+
+    const payload = buildDraftPayload();
+    try{
+      const { data, error } = await sb
+        .from("docs")
+        .upsert({
+          user_id: u.id,
+          kind: DRAFT_KIND,
+          doc_key: DRAFT_KEY,
+          payload
+        }, { onConflict: "user_id,kind,doc_key" })
+        .select("updated_at")
+        .single();
+
+      if(error) throw error;
+
+      draftServerUpdatedAt = data?.updated_at || null;
+      draftSavedAt = payload.savedAt;
+      draftSavedBy = payload.savedBy;
+      draftDirty = false;
+      updateDraftInfoUI("同期済み");
+    }catch(e){
+      log("saveRemoteDraft failed", e);
+      updateDraftInfoUI("同期失敗（ローカル保存済み）");
+    }finally{
+      draftSaving = false;
+    }
+  }
+
+  function scheduleDraftSave(reason=""){
+    // ローカルは即保存
+    const payload = buildDraftPayload();
+    saveLocalDraft(payload);
+    draftDirty = true;
+    updateDraftInfoUI("保存中…");
+
+    // リモートはデバウンス
+    clearTimeout(draftSaveTimer);
+    draftSaveTimer = setTimeout(() => {
+      saveRemoteDraft().catch(()=>{});
+    }, 700);
+  }
+
+  function updateDraftInfoUI(extra){
+    const dot = $("draftDot");
+    const label = $("draftInfo");
+
+    const saved = draftSavedAt ? `savedAt ${draftSavedAt}` : "未保存";
+    const by = draftSavedBy ? ` / by ${draftSavedBy}` : "";
+    const server = draftServerUpdatedAt ? ` / server ${draftServerUpdatedAt}` : "";
+    const dirty = draftDirty ? " / *dirty" : "";
+
+    label.textContent = `下書き：${saved}${by}${server}${dirty}` + (extra ? ` / ${extra}` : "");
+
+    // dot state
+    dot.classList.remove("ok","run");
+    if(stage === "end") dot.classList.add("run");
+    if(!draftDirty && draftSavedAt) dot.classList.add("ok");
+  }
+
+  function updateStageUI(){
+    $("stageLabel").textContent = (stage === "start") ? "開始入力" : "終了入力";
+    $("btnStageStart").classList.toggle("active", stage === "start");
+    $("btnStageEnd").classList.toggle("active", stage === "end");
+
+    $("btnConfirmStart").style.display = (stage === "start") ? "" : "none";
+    $("btnFinishEvent").style.display = (stage === "end") ? "" : "none";
+    $("btnBackToStart").style.display = (stage === "end") ? "" : "none";
+
+    $("productsHint").textContent =
+      (stage === "start")
+        ? "開始モード：開始在庫を入力します（終了は後で）。入力は自動で下書き保存＆同期されます。"
+        : "終了モード：開始は固定です。終了在庫を入力すると差分から見込み原価が出ます。";
+
+    // 開始確定後はメタ情報をロック（事故防止）
+    const lock = (stage === "end");
+    ["evDate","evGuests","evDrinkPrice","evExt","evStyle","evStaff"].forEach(id => {
+      const el = $(id);
+      if(!el) return;
+      el.disabled = lock;
+    });
+
+    updateDraftInfoUI("");
+  }
+
+  function setStage(next){
+    stage = next;
+    updateStageUI();
+    renderProducts();
+    recalcKpi();
+    scheduleDraftSave("stage");
+  }
+
+  // ===== master / events =====
+  async function loadMaster(){
+    const u = await refreshAuthState();
+    if(!u) return;
+
+    const row = await ensureMasterRow();
+    master = row.payload || { version:1, items:[] };
+    masterRowUpdatedAt = row.updated_at || null;
+    $("masterUpdated").textContent = masterRowUpdatedAt || "—";
+
+    initQtyMaps();
+    renderMaster();
+    renderProducts();
+    recalcKpi();
+  }
+
+  async function saveMaster(){
     const u = await getUser();
     if(!u) return alert("先にログインして");
-    if(!master.items?.length) return alert("商品マスタが空です。先に登録してください。");
 
-    const payload = buildEventPayload();
-    if(!payload.items.length){
-      if(!confirm("開始/終了が1件も入力されていません。このまま保存しますか？")) return;
-    }
+    master.lastSavedAt = new Date().toISOString();
+    master.lastSavedBy = getOrCreateDeviceId();
 
-    const id = editingEventId || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()));
-    const { error } = await sb
+    const { data, error } = await sb
       .from("docs")
       .upsert({
         user_id: u.id,
-        kind: "event",
-        doc_key: id,
-        payload
-      }, { onConflict: "user_id,kind,doc_key" });
+        kind: "master",
+        doc_key: "main",
+        payload: master
+      }, { onConflict: "user_id,kind,doc_key" })
+      .select("updated_at")
+      .single();
 
     if(error){
-      log("saveEvent error", error);
-      return alert("宴会保存エラー: " + error.message);
+      log("saveMaster error", error);
+      return alert("マスタ保存エラー: " + error.message);
     }
+    masterRowUpdatedAt = data.updated_at || null;
+    $("masterUpdated").textContent = masterRowUpdatedAt || "—";
+    alert("マスタを保存して同期しました");
 
-    log("event saved", { id, totalCostYen: payload.totalCostYen, salesYen: payload.salesYen, missingEnds: payload.missingEnds });
-    alert("宴会を保存しました");
-    resetDraft();
-    await loadEvents();
-  }
-
-  async function deleteEvent(docKey){
-    if(!confirm("この宴会を削除しますか？")) return;
-    const { error } = await sb
-      .from("docs")
-      .delete()
-      .eq("kind", "event")
-      .eq("doc_key", docKey);
-
-    if(error){
-      log("deleteEvent error", error);
-      return alert("削除エラー: " + error.message);
-    }
-    log("event deleted", { docKey });
-    await loadEvents();
-  }
-
-  function loadEventToDraft(docKey){
-    const row = events.find(e => e.doc_key === docKey);
-    if(!row) return;
-
-    const p = row.payload || {};
-    editingEventId = docKey;
-
-    $("evDate").value = p.date || todayISO();
-    $("evGuests").value = (p.guests ?? "") === null ? "" : String(p.guests ?? "");
-    $("evDrinkPrice").value = (p.drinkPricePerHeadYen ?? "") === null ? "" : String(p.drinkPricePerHeadYen ?? "");
-    $("evExt").value = String(p.extensionCount ?? 0);
-    $("evStyle").value = p.style || "seated";
-    $("evStaff").value = (p.staff || []).join(", ");
-
-    (master.items || []).forEach(it => { start10[it.id] = 0; end10[it.id] = null; });
-    (p.items || []).forEach(x => {
-      start10[x.itemId] = to10(x.startQty || 0);
-      end10[x.itemId]   = (x.endQty === null || x.endQty === undefined) ? null : to10(x.endQty || 0);
-    });
-
-    updateDurationUI();
+    // マスタ変更後も下書きは消さない（アイテムID基準で維持）
+    initQtyMaps();
     renderProducts();
-    recalcDraftKpi();
-    alert("宴会を読み込みました（保存で上書き更新）");
+    recalcKpi();
+    scheduleDraftSave("master");
   }
 
-  function escapeHtml(s){
-    return String(s ?? "").replace(/[&<>"']/g, m => ({
-      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
-    }[m]));
+  async function loadEvents(){
+    const u = await refreshAuthState();
+    if(!u) return;
+
+    const { data, error } = await sb
+      .from("docs")
+      .select("doc_key, payload, created_at, updated_at")
+      .eq("kind", "event")
+      .order("created_at", { ascending: false })
+      .limit(400);
+
+    if(error){
+      log("loadEvents error", error);
+      return alert("宴会読み込みエラー: " + error.message);
+    }
+    events = data || [];
+    $("eventsCount").textContent = String(events.length);
+    renderEvents();
   }
 
-  // master render
+  // ===== render master =====
   function renderMaster(){
     const box = $("masterList");
     box.innerHTML = "";
@@ -1134,7 +1240,8 @@
         delete end10[it.id];
         renderMaster();
         renderProducts();
-        recalcDraftKpi();
+        recalcKpi();
+        scheduleDraftSave("master-del");
       });
       el.querySelector('[data-act="edit"]').addEventListener("click", () => {
         const name = prompt("商品名", it.name);
@@ -1166,7 +1273,8 @@
 
         renderMaster();
         renderProducts();
-        recalcDraftKpi();
+        recalcKpi();
+        scheduleDraftSave("master-edit");
       });
       box.appendChild(el);
     });
@@ -1183,7 +1291,7 @@
     return Math.round(used * Number(it.costYen || 0));
   }
 
-  // product render (start/end)
+  // ===== render products =====
   function renderProducts(){
     const box = $("products");
     box.innerHTML = "";
@@ -1198,7 +1306,7 @@
       const e10 = end10[it.id];
       const used10 = (e10 === null || e10 === undefined) ? null : (s10 - e10);
 
-      const usedText = (used10 === null) ? "未入力" : (used10/10).toFixed(1);
+      const usedText = (used10 === null) ? "—" : (used10/10).toFixed(1);
       const usedClass = (used10 === null) ? "missing" : (used10 < 0 ? "negative" : "");
 
       const minQty = (it.minQty === null || it.minQty === undefined) ? null : Number(it.minQty);
@@ -1213,6 +1321,49 @@
         ? `最低用意 ${minQty.toFixed(1)}${escapeHtml(it.unit||"本")}`
         : `最低用意 —`;
 
+      // stage-specific boxes
+      const startBox = (stage === "start")
+        ? `
+          <div class="ctrlBox startBox startArea">
+            <div class="ctrlTitle"><span>開始（入力）</span><span class="mono">${(s10/10).toFixed(1)}</span></div>
+            <div class="ctrlGrid">
+              <div class="stepBtn" data-field="start" data-step="-10">−1</div>
+              <div class="stepBtn" data-field="start" data-step="-1">−0.1</div>
+              <input class="qtyInput" data-field="startInput" inputmode="decimal" placeholder="0.0" value="${(s10/10).toFixed(1)}" />
+              <div class="stepBtn primary" data-field="start" data-step="1">+0.1</div>
+              <div class="stepBtn primary" data-field="start" data-step="10">+1</div>
+            </div>
+          </div>
+        `
+        : `
+          <div class="ctrlBox startBox startArea readonly">
+            <div class="ctrlTitle"><span>開始（固定）</span><span class="mono">${(s10/10).toFixed(1)}</span></div>
+            <div class="roQty mono">${(s10/10).toFixed(1)}</div>
+            <div class="small">開始は変更できません</div>
+          </div>
+        `;
+
+      const endBox = (stage === "end")
+        ? `
+          <div class="ctrlBox endBox endArea">
+            <div class="ctrlTitle"><span>終了（入力）</span><span class="mono">${(e10 === null || e10 === undefined) ? "—" : (e10/10).toFixed(1)}</span></div>
+            <div class="ctrlGrid">
+              <div class="stepBtn" data-field="end" data-step="-10">−1</div>
+              <div class="stepBtn" data-field="end" data-step="-1">−0.1</div>
+              <input class="qtyInput" data-field="endInput" inputmode="decimal" placeholder="—" value="${(e10 === null || e10 === undefined) ? "" : (e10/10).toFixed(1)}" />
+              <div class="stepBtn primary" data-field="end" data-step="1">+0.1</div>
+              <div class="stepBtn primary" data-field="end" data-step="10">+1</div>
+            </div>
+          </div>
+        `
+        : `
+          <div class="ctrlBox endBox endArea readonly">
+            <div class="ctrlTitle"><span>終了（後で）</span><span class="mono">—</span></div>
+            <div class="roQty mono">—</div>
+            <div class="small">開始確定後に入力します</div>
+          </div>
+        `;
+
       const row = document.createElement("div");
       row.className = "prodRow";
       row.innerHTML = `
@@ -1225,27 +1376,8 @@
         </div>
 
         <div class="controls" data-itemid="${escapeHtml(it.id)}">
-          <div class="ctrlBox startBox startArea">
-            <div class="ctrlTitle"><span>開始（赤）</span><span class="mono">${(s10/10).toFixed(1)}</span></div>
-            <div class="ctrlGrid">
-              <div class="stepBtn" data-field="start" data-step="-10">−1</div>
-              <div class="stepBtn" data-field="start" data-step="-1">−0.1</div>
-              <input class="qtyInput" data-field="startInput" inputmode="decimal" placeholder="0.0" value="${(s10/10).toFixed(1)}" />
-              <div class="stepBtn primary" data-field="start" data-step="1">+0.1</div>
-              <div class="stepBtn primary" data-field="start" data-step="10">+1</div>
-            </div>
-          </div>
-
-          <div class="ctrlBox endBox endArea">
-            <div class="ctrlTitle"><span>終了（青）</span><span class="mono">${(e10 === null || e10 === undefined) ? "—" : (e10/10).toFixed(1)}</span></div>
-            <div class="ctrlGrid">
-              <div class="stepBtn" data-field="end" data-step="-10">−1</div>
-              <div class="stepBtn" data-field="end" data-step="-1">−0.1</div>
-              <input class="qtyInput" data-field="endInput" inputmode="decimal" placeholder="—" value="${(e10 === null || e10 === undefined) ? "" : (e10/10).toFixed(1)}" />
-              <div class="stepBtn primary" data-field="end" data-step="1">+0.1</div>
-              <div class="stepBtn primary" data-field="end" data-step="10">+1</div>
-            </div>
-          </div>
+          ${startBox}
+          ${endBox}
 
           <div class="usedBox usedArea">
             <div class="usedLine">使用（開始−終了）</div>
@@ -1270,14 +1402,17 @@
       const field = btn.getAttribute("data-field");
 
       if(field === "start"){
+        if(stage !== "start") return;
         const now = start10[itemId] || 0;
         start10[itemId] = Math.max(0, now + step);
       }else if(field === "end"){
+        if(stage !== "end") return;
         const now = (end10[itemId] === null || end10[itemId] === undefined) ? 0 : (end10[itemId] || 0);
         end10[itemId] = Math.max(0, now + step);
       }
       renderProducts();
-      recalcDraftKpi();
+      recalcKpi();
+      scheduleDraftSave("qty");
     };
 
     box.onchange = (ev) => {
@@ -1290,9 +1425,11 @@
       const val = (inp.value || "").trim();
 
       if(f === "startInput"){
+        if(stage !== "start") return;
         const n = parseNumberSafe(val);
         start10[itemId] = Math.max(0, to10(n || 0));
       }else if(f === "endInput"){
+        if(stage !== "end") return;
         if(val === ""){
           end10[itemId] = null;
         }else{
@@ -1301,11 +1438,12 @@
         }
       }
       renderProducts();
-      recalcDraftKpi();
+      recalcKpi();
+      scheduleDraftSave("qty");
     };
   }
 
-  // events list + cumulative
+  // ===== events list =====
   function renderEvents(){
     const box = $("events");
     box.innerHTML = "";
@@ -1373,14 +1511,7 @@
           </div>
           <div><span class="badge">updated: ${escapeHtml(e.updated_at || "-")}</span></div>
         </div>
-        <div class="btnbar">
-          <button data-act="edit">編集</button>
-          <button class="danger" data-act="del">削除</button>
-        </div>
       `;
-
-      el.querySelector('[data-act="edit"]').addEventListener("click", () => loadEventToDraft(e.doc_key));
-      el.querySelector('[data-act="del"]').addEventListener("click", () => deleteEvent(e.doc_key));
       box.appendChild(el);
     });
 
@@ -1391,7 +1522,238 @@
     $("kpiAvgPerHead").textContent = (sumGuests > 0) ? `平均（原価/人） ${yen(sumCostComplete / sumGuests)}` : "—";
   }
 
-  // UI handlers
+  // ===== actions: stage flow =====
+  function ensureDraftInitialized(){
+    if(!$("evDate").value) $("evDate").value = todayISO();
+    if($("evExt").value === "") $("evExt").value = "0";
+    updateDurationUI();
+    initQtyMaps();
+    updateStageUI();
+    renderProducts();
+    recalcKpi();
+    scheduleDraftSave("init");
+  }
+
+  async function confirmStart(){
+    if(!master.items?.length) return alert("商品マスタが空です。先に登録してください。");
+
+    // 必須ではないけど、最低限の事故防止
+    const date = $("evDate").value || "";
+    if(!date){
+      alert("日付を入れてください");
+      return;
+    }
+
+    if(!confirm("開始を確定します。以後、開始数量と宴会情報はロックされます。よろしいですか？")) return;
+
+    // 終了入力へ：end10を全て未入力に（終了は後で）
+    stage = "end";
+    (master.items || []).forEach(it => {
+      if(end10[it.id] === undefined) end10[it.id] = null;
+      end10[it.id] = null;
+    });
+
+    updateStageUI();
+    renderProducts();
+    recalcKpi();
+
+    // 即同期
+    const payload = buildDraftPayload();
+    saveLocalDraft(payload);
+    await saveRemoteDraft(true);
+  }
+
+  async function backToStart(){
+    if(!confirm("開始を編集し直します。現在の終了入力は破棄されます。よろしいですか？")) return;
+    stage = "start";
+    // 終了は破棄
+    (master.items || []).forEach(it => end10[it.id] = null);
+
+    updateStageUI();
+    renderProducts();
+    recalcKpi();
+
+    const payload = buildDraftPayload();
+    saveLocalDraft(payload);
+    await saveRemoteDraft(true);
+  }
+
+  function buildEventPayloadFromDraft(){
+    const m = {
+      date: $("evDate").value || todayISO(),
+      guests: parseIntSafe($("evGuests").value),
+      drinkPricePerHeadYen: parseIntSafe($("evDrinkPrice").value),
+      extensionCount: Math.max(0, parseIntSafe($("evExt").value) || 0),
+      style: $("evStyle").value,
+      staff: ($("evStaff").value || "").split(",").map(s=>s.trim()).filter(Boolean).slice(0,2)
+    };
+    const salesYen = (m.guests && m.drinkPricePerHeadYen) ? (m.guests * m.drinkPricePerHeadYen) : null;
+    const durationMin = 90 + 30 * m.extensionCount;
+
+    const items = [];
+    let totalCostYen = 0;
+    let missingEnds = 0;
+    let negativeCount = 0;
+
+    for(const it of (master.items || [])){
+      const s10 = start10[it.id] || 0;
+      const e10 = end10[it.id];
+
+      const hasStart = s10 !== 0;
+      const hasEnd = !(e10 === null || e10 === undefined);
+
+      if(!hasStart && !hasEnd) continue;
+
+      let used10 = null;
+      let costItemYen = 0;
+
+      if(!hasEnd){
+        missingEnds++;
+      }else{
+        used10 = s10 - e10;
+        if(used10 < 0) negativeCount++;
+        const used = used10 / 10;
+        if(used > 0){
+          costItemYen = Math.round(used * Number(it.costYen || 0));
+          totalCostYen += costItemYen;
+        }
+      }
+
+      items.push({
+        itemId: it.id,
+        startQty: Number((s10/10).toFixed(1)),
+        endQty: hasEnd ? Number((e10/10).toFixed(1)) : null,
+        usedQty: (used10 === null) ? null : Number((used10/10).toFixed(1)),
+        costItemYen
+      });
+    }
+
+    const isComplete = (missingEnds === 0);
+    const costRate = (salesYen && salesYen > 0) ? (totalCostYen / salesYen) : null;
+
+    return {
+      version: 2,
+      date: m.date,
+      guests: m.guests ?? null,
+      drinkPricePerHeadYen: m.drinkPricePerHeadYen ?? null,
+      salesYen,
+      costRate,
+      drinkBaseMin: 90,
+      extensionCount: m.extensionCount,
+      durationMin,
+      style: m.style,
+      staff: m.staff,
+      items,
+      totalCostYen: Math.round(totalCostYen),
+      missingEnds,
+      negativeCount,
+      isComplete,
+      savedAt: new Date().toISOString(),
+      savedBy: getOrCreateDeviceId()
+    };
+  }
+
+  async function finishEvent(){
+    if(stage !== "end") return alert("まず開始を確定して、終了入力に進んでください。");
+
+    const payload = buildEventPayloadFromDraft();
+    if(payload.missingEnds > 0){
+      if(!confirm(`終了未入力の商品が ${payload.missingEnds} 件あります。\nこのまま保存すると「未確定」として記録されます。保存しますか？`)) return;
+    }
+
+    const u = await getUser();
+    if(!u) return alert("先にログインして");
+
+    const id = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()));
+    const { error } = await sb
+      .from("docs")
+      .upsert({
+        user_id: u.id,
+        kind: "event",
+        doc_key: id,
+        payload
+      }, { onConflict: "user_id,kind,doc_key" });
+
+    if(error){
+      log("finishEvent save error", error);
+      return alert("宴会保存エラー: " + error.message);
+    }
+
+    // draft削除（ローカル&リモート）
+    await clearDraftAll(true);
+    alert("宴会を保存しました（完了）");
+    await loadEvents();
+  }
+
+  async function clearDraftAll(silent=false){
+    // local
+    clearLocalDraft();
+
+    // reset state
+    stage = "start";
+    start10 = {};
+    end10 = {};
+    draftSavedAt = null;
+    draftSavedBy = null;
+    draftServerUpdatedAt = null;
+    draftDirty = false;
+
+    // reset meta
+    $("evDate").value = todayISO();
+    $("evGuests").value = "";
+    $("evDrinkPrice").value = "";
+    $("evExt").value = "0";
+    $("evStyle").value = "seated";
+    $("evStaff").value = "";
+    updateDurationUI();
+
+    // remote delete
+    const u = await getUser();
+    if(u){
+      const { error } = await sb
+        .from("docs")
+        .delete()
+        .eq("kind", DRAFT_KIND)
+        .eq("doc_key", DRAFT_KEY);
+      if(error) log("remote draft delete error", error);
+    }
+
+    initQtyMaps();
+    updateStageUI();
+    renderProducts();
+    recalcKpi();
+
+    if(!silent) alert("下書きを削除しました");
+  }
+
+  // ===== load draft on startup / reload =====
+  async function loadDraftPreferNewer(){
+    // まずローカル
+    const local = loadLocalDraft();
+    // 次にリモート（ログイン時）
+    const remote = await loadRemoteDraft();
+
+    const localAt = local?.savedAt ? Date.parse(local.savedAt) : 0;
+    const remoteAt = remote?.savedAt ? Date.parse(remote.savedAt) : 0;
+
+    if(remote && remoteAt >= localAt){
+      applyDraftPayload(remote);
+      saveLocalDraft(remote); // ローカルも合わせる
+      updateDraftInfoUI("server採用");
+      return;
+    }
+    if(local){
+      applyDraftPayload(local);
+      updateDraftInfoUI("local採用");
+      return;
+    }
+
+    // どっちも無ければ新規
+    ensureDraftInitialized();
+    updateDraftInfoUI("新規");
+  }
+
+  // ===== UI handlers =====
   $("btnLogin").addEventListener("click", async () => {
     const email = ($("email").value || "").trim();
     const password = $("pw").value || "";
@@ -1401,39 +1763,55 @@
       log("login failed", error);
       return alert("ログイン失敗: " + error.message);
     }
-    log("login ok");
     await reloadAll();
   });
 
   $("btnLogout").addEventListener("click", async () => {
     await sb.auth.signOut();
-    log("logout");
     await refreshAuthState();
   });
 
   $("btnReloadAll").addEventListener("click", () => reloadAll());
 
-  $("evGuests").addEventListener("input", recalcDraftKpi);
-  $("evDrinkPrice").addEventListener("input", recalcDraftKpi);
-  $("evExt").addEventListener("input", () => { updateDurationUI(); recalcDraftKpi(); });
-
-  $("btnResetStart").addEventListener("click", () => {
-    if(!confirm("開始をすべて0にしますか？")) return;
-    (master.items || []).forEach(it => start10[it.id] = 0);
-    renderProducts(); recalcDraftKpi();
+  // stage buttons
+  $("btnStageStart").addEventListener("click", () => {
+    if(stage === "start") return;
+    backToStart().catch(()=>{});
+  });
+  $("btnStageEnd").addEventListener("click", () => {
+    if(stage === "end") return;
+    // endに行くには開始確定を推奨
+    confirmStart().catch(()=>{});
   });
 
-  $("btnClearEnd").addEventListener("click", () => {
-    if(!confirm("終了をすべて未入力に戻しますか？")) return;
-    (master.items || []).forEach(it => end10[it.id] = null);
-    renderProducts(); recalcDraftKpi();
+  $("btnConfirmStart").addEventListener("click", () => confirmStart().catch(()=>{}));
+  $("btnBackToStart").addEventListener("click", () => backToStart().catch(()=>{}));
+  $("btnFinishEvent").addEventListener("click", () => finishEvent().catch(()=>{}));
+
+  $("btnDraftSave").addEventListener("click", async () => {
+    const payload = buildDraftPayload();
+    saveLocalDraft(payload);
+    await saveRemoteDraft(true);
+    alert("途中保存しました（同期）");
   });
 
-  $("btnSaveEvent").addEventListener("click", saveEvent);
+  $("btnDraftClear").addEventListener("click", async () => {
+    if(!confirm("下書きを削除します。開始/終了の入力内容は消えます。よろしいですか？")) return;
+    await clearDraftAll(false);
+  });
 
-  $("btnNewEvent").addEventListener("click", () => {
-    if(!confirm("編集中の内容を破棄して新規入力にしますか？")) return;
-    resetDraft();
+  // meta inputs => auto save (startのみ編集可能だが、念のため共通で)
+  ["evDate","evGuests","evDrinkPrice","evExt","evStyle","evStaff"].forEach(id => {
+    $(id).addEventListener("input", () => {
+      updateDurationUI();
+      recalcKpi();
+      scheduleDraftSave("meta");
+    });
+    $(id).addEventListener("change", () => {
+      updateDurationUI();
+      recalcKpi();
+      scheduleDraftSave("meta");
+    });
   });
 
   $("btnClearFilter").addEventListener("click", () => {
@@ -1444,6 +1822,7 @@
   $("fFrom").addEventListener("change", renderEvents);
   $("fTo").addEventListener("change", renderEvents);
 
+  // master add
   $("btnAddMaster").addEventListener("click", () => {
     const name = ($("mName").value || "").trim();
     const unit = ($("mUnit").value || "本").trim() || "本";
@@ -1478,12 +1857,22 @@
 
     renderMaster();
     renderProducts();
-    recalcDraftKpi();
+    recalcKpi();
+    scheduleDraftSave("master-add");
   });
 
   $("btnSaveMaster").addEventListener("click", saveMaster);
 
-  // realtime
+  $("btnDump").addEventListener("click", () => {
+    log("dump", {
+      stage, draftSavedAt, draftSavedBy, draftServerUpdatedAt, draftDirty,
+      masterCount: master.items?.length || 0,
+      eventsCount: events.length,
+      start10, end10
+    });
+  });
+
+  // ===== realtime =====
   let rtChannel = null;
   function subscribeRealtime(){
     if(rtChannel) return;
@@ -1494,12 +1883,14 @@
       if(!n) return;
 
       if(n.kind === "master" && n.doc_key === "main"){
-        log("realtime: master changed", { updated_at: n.updated_at });
         loadMaster().catch(e => log("loadMaster failed", e));
       }
       if(n.kind === "event"){
-        log("realtime: event changed", { doc_key: n.doc_key, updated_at: n.updated_at });
         loadEvents().catch(e => log("loadEvents failed", e));
+      }
+      if(n.kind === DRAFT_KIND && n.doc_key === DRAFT_KEY){
+        // 他端末の下書き更新を反映
+        loadDraftPreferNewer().catch(e => log("loadDraftPreferNewer failed", e));
       }
     }).subscribe((status) => {
       $("rtState").textContent = status;
@@ -1509,22 +1900,32 @@
 
   async function reloadAll(){
     const u = await refreshAuthState();
-    if(!u) return;
+    if(!u){
+      // ログインなしでもローカル下書きは読み込む
+      const local = loadLocalDraft();
+      if(local) applyDraftPayload(local);
+      else ensureDraftInitialized();
+      return;
+    }
     subscribeRealtime();
     await loadMaster();
     await loadEvents();
-
-    if(!$("evDate").value) $("evDate").value = todayISO();
-    if($("evExt").value === "") $("evExt").value = "0";
-    updateDurationUI();
-    recalcDraftKpi();
+    await loadDraftPreferNewer();
   }
 
   // initial
+  applyTheme(localStorage.getItem(THEME_KEY) || "light");
   $("evDate").value = todayISO();
   $("evExt").value = "0";
   updateDurationUI();
-  refreshAuthState();
+  updateStageUI();
+  refreshAuthState().then(() => {
+    // 初回はローカル下書きがあれば採用（未ログインでも）
+    const local = loadLocalDraft();
+    if(local) applyDraftPayload(local);
+    else ensureDraftInitialized();
+  });
+
 })();
 </script>
 </body>
