@@ -4,7 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="color-scheme" content="light dark">
-  <title>宴会 見込み原価（開始/終了在庫） - Sample C改</title>
+  <title>宴会 見込み原価（開始/終了在庫） - Sample D</title>
+
   <style>
     :root{
       --bg:#f6f7f9;
@@ -47,6 +48,7 @@
       background: var(--bg);
       color:var(--text);
     }
+
     header{
       position:sticky; top:0; z-index:5;
       background: color-mix(in oklab, var(--bg) 92%, transparent);
@@ -99,7 +101,12 @@
       background: color-mix(in oklab, var(--accent) 6%, transparent);
     }
 
-    main{ padding:14px; max-width:1150px; margin:0 auto; }
+    main{
+      padding:14px;
+      max-width:1150px;
+      margin:0 auto;
+    }
+
     .grid{ display:grid; gap:12px; }
 
     .card{
@@ -125,7 +132,6 @@
       font-size:14px;
       outline:none;
     }
-    textarea{ min-height:90px; resize: vertical; }
 
     button{
       border:1px solid var(--line);
@@ -151,8 +157,12 @@
     .small{ font-size:12px; color:var(--muted); line-height:1.5; }
     .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace; }
 
-    /* KPI: 画面幅に応じて自動段組 */
-    .kpiGrid{ display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:10px; }
+    /* KPI：通常は可変 */
+    .kpiGrid{
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap:10px;
+    }
     .kpi{
       border:1px solid var(--line);
       border-radius:14px;
@@ -171,6 +181,7 @@
     }
     .itemHeader{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
     .itemHeader h3{ margin:0; font-size:14px; }
+
     .badge{
       font-size:11px; color:var(--muted);
       padding:4px 8px; border:1px solid var(--line);
@@ -183,13 +194,8 @@
       border-color: color-mix(in oklab, var(--warn) 45%, var(--line));
       background: color-mix(in oklab, var(--warn) 8%, var(--card));
     }
-    .badge.bad{
-      color: color-mix(in oklab, var(--danger) 85%, var(--text));
-      border-color: color-mix(in oklab, var(--danger) 45%, var(--line));
-      background: color-mix(in oklab, var(--danger) 8%, var(--card));
-    }
 
-    /* Product rows */
+    /* 商品行：基本は 2カラム（情報 / 操作） */
     .prodRow{
       display:grid;
       grid-template-columns: 1fr 560px;
@@ -200,7 +206,6 @@
     }
     .prodRow:first-child{ border-top:none; padding-top:0; }
 
-    /* ④ 商品名：ちょい大きめ＋中央揃え */
     .prodName{
       font-size:16px;
       font-weight:700;
@@ -214,11 +219,12 @@
       text-align:center;
     }
 
+    /* controls：通常は3カラム（開始/終了/使用原価） */
     .controls{
       display:grid;
       grid-template-columns: 1fr 1fr 1fr;
       gap:10px;
-      align-items:center;
+      align-items:stretch;
     }
 
     .ctrlBox{
@@ -228,7 +234,6 @@
       background: color-mix(in oklab, var(--card) 92%, var(--bg));
     }
 
-    /* ③ 開始/終了の淡い色分け（ラベルもあるので色弱でも判別しやすい） */
     .ctrlBox.startBox{
       background: color-mix(in oklab, #ef4444 7%, var(--card));
       border-color: color-mix(in oklab, #ef4444 22%, var(--line));
@@ -244,13 +249,13 @@
       margin-bottom:10px;
     }
 
-    /* ④ 開始/終了を少し大きく（レイアウト崩れない範囲） */
     .ctrlGrid{
       display:grid;
       grid-template-columns: 48px 62px 1fr 62px 48px;
       gap:8px;
       align-items:center;
     }
+
     .stepBtn{
       height:48px;
       display:flex; align-items:center; justify-content:center;
@@ -263,7 +268,6 @@
       font-weight:600;
     }
 
-    /* ボタンの“強調”を開始=赤寄り、終了=青寄り（色だけに依存しないよう開始/終了ラベルも併用） */
     .startBox .stepBtn.primary{
       border-color: color-mix(in oklab, #ef4444 45%, var(--line));
       background: color-mix(in oklab, #ef4444 10%, var(--card));
@@ -283,28 +287,92 @@
       height:48px;
     }
 
+    /* 使用/原価：通常も「箱」にして見やすく（右に飛んだ感を減らす） */
     .usedBox{
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:12px;
+      background: color-mix(in oklab, var(--card) 92%, var(--bg));
       display:flex;
       flex-direction:column;
       gap:8px;
+      justify-content:center;
       align-items:flex-end;
+      min-height:100%;
     }
     .usedLine{ font-size:12px; color:var(--muted); }
-    .usedVal{ font-size:16px; font-weight:700; }
+    .usedVal{ font-size:18px; font-weight:800; }
     .usedVal.negative{ color: var(--danger); }
     .usedVal.missing{ color: var(--warn); }
 
+    /* Master：横向き最適の2カラム枠 */
+    .masterSplit{
+      display:grid;
+      gap:12px;
+    }
+
+    /* スマホ等 */
     @media (max-width: 980px){
       .prodRow{ grid-template-columns: 1fr; }
       .controls{ grid-template-columns: 1fr; }
       .usedBox{ align-items:flex-start; }
+      .masterSplit{ grid-template-columns: 1fr; }
+    }
+
+    /* ★第7世代iPad横向き（だいたい 1024px 幅）を狙った最適化 */
+    @media (min-width: 900px) and (max-width: 1100px) and (orientation: landscape){
+      main{
+        max-width:1024px;
+        padding:12px;
+      }
+
+      /* KPIが横に伸びすぎないよう 2列固定 */
+      .kpiGrid{
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      /* 商品行：情報を少し固定して、操作を安定させる */
+      .prodRow{
+        grid-template-columns: 360px 1fr;
+        gap:12px;
+      }
+
+      /* “右に吹っ飛ぶ”感の原因＝3カラムの右端に使用原価が寄るので
+         iPad横は「開始/終了 上段2列、使用/原価 下段全幅」に変更 */
+      .controls{
+        grid-template-columns: 1fr 1fr;
+        grid-template-areas:
+          "start end"
+          "used used";
+        gap:12px;
+      }
+      .startArea{ grid-area:start; }
+      .endArea{ grid-area:end; }
+      .usedArea{
+        grid-area:used;
+        align-items:flex-start;
+      }
+      .usedBox{
+        align-items:flex-start;
+      }
+
+      /* Master画面：左フォーム/右一覧 で安定 */
+      .masterSplit{
+        grid-template-columns: 420px 1fr;
+        align-items:start;
+      }
+
+      /* 操作部ほんの少し大きく（横向きでタップしやすい） */
+      .stepBtn{ height:52px; }
+      .qtyInput{ height:52px; font-size:19px; }
     }
   </style>
 </head>
+
 <body>
 <header>
   <div class="top">
-    <h1>宴会 見込み原価（開始/終了在庫）- Sample C改</h1>
+    <h1>宴会 見込み原価（開始/終了在庫）- Sample D</h1>
     <div class="topRight">
       <button id="btnTheme" class="themeBtn" title="テーマ切替">☀️ <span class="mono" style="font-size:12px;">LIGHT</span></button>
       <div class="pill"><span id="authState">未ログイン</span> <span class="mono" id="deviceId">—</span></div>
@@ -426,7 +494,7 @@
 
       <div class="small" style="margin-bottom:8px;">
         「開始（赤系）」と「終了（青系）」を入力します（0.1 / 1.0の増減ボタン + 直接入力）。<br>
-        終了が未入力の商品は差分計算に入らず、宴会は未確定扱いになります。
+        iPad横向きでは “使用/原価” が下段に来るので右に飛びません。
       </div>
 
       <div id="products" class="list"></div>
@@ -470,7 +538,7 @@
           <div class="small">原価÷売上</div>
         </div>
         <div class="kpi">
-          <div class="t">累計 人数 / 平均（円/人）</div>
+          <div class="t">累計 人数 / 平均（原価/人）</div>
           <div class="v mono" id="kpiSumGuests">0</div>
           <div class="small mono" id="kpiAvgPerHead">—</div>
         </div>
@@ -484,53 +552,58 @@
 
   <!-- MASTER -->
   <section id="tab-master" class="grid" style="display:none;">
-    <div class="card">
-      <h2 style="margin:0 0 10px; font-size:15px;">商品マスタ（端末間同期）</h2>
+    <div class="masterSplit">
+      <div class="card">
+        <h2 style="margin:0 0 10px; font-size:15px;">商品マスタ（端末間同期）</h2>
 
-      <div class="row">
-        <div>
-          <label>商品名</label>
-          <input id="mName" placeholder="例：生ビール / ハイボール用ウイスキー / ワイン赤" />
+        <div class="row">
+          <div>
+            <label>商品名</label>
+            <input id="mName" placeholder="例：生ビール / ハイボール用ウイスキー / ワイン赤" />
+          </div>
+          <div>
+            <label>単位（例：本/樽/缶）</label>
+            <input id="mUnit" placeholder="例：本" />
+          </div>
         </div>
-        <div>
-          <label>単位（例：本/樽/缶）</label>
-          <input id="mUnit" placeholder="例：本" />
+
+        <div class="row">
+          <div>
+            <label>仕入単価（円/1単位）</label>
+            <input id="mCost" inputmode="numeric" placeholder="例：4800" />
+          </div>
+          <div>
+            <label>最低用意数（本）</label>
+            <input id="mMin" inputmode="decimal" placeholder="例：6（目安）" />
+            <div class="small">初心者が準備しやすい目安として使います</div>
+          </div>
         </div>
-        <div>
-          <label>仕入単価（円/1単位）</label>
-          <input id="mCost" inputmode="numeric" placeholder="例：4800" />
+
+        <div class="row">
+          <div>
+            <label>カテゴリ（任意）</label>
+            <input id="mCat" placeholder="例：BEER / WHISKY / WINE / SOFT" />
+          </div>
+          <div>
+            <label>備考（任意）</label>
+            <input id="mNote" placeholder="例：20L樽 / 700mlボトル" />
+          </div>
         </div>
+
+        <div class="btnbar">
+          <button class="primary" id="btnAddMaster">マスタに追加</button>
+          <button class="ghost" id="btnSaveMaster">マスタを保存（同期）</button>
+        </div>
+
+        <div class="hr"></div>
+        <div class="small">※iPad横向きでは「左：登録 / 右：一覧」表示で固定されます。</div>
       </div>
 
-      <div class="row">
-        <div>
-          <label>最低用意数（本）</label>
-          <input id="mMin" inputmode="decimal" placeholder="例：6（目安）" />
-          <div class="small">初心者が準備しやすい目安として使います</div>
-        </div>
-        <div>
-          <label>カテゴリ（任意）</label>
-          <input id="mCat" placeholder="例：BEER / WHISKY / WINE / SOFT" />
-        </div>
-        <div>
-          <label>備考（任意）</label>
-          <input id="mNote" placeholder="例：20L樽 / 700mlボトル" />
-        </div>
+      <div class="card">
+        <h2 style="margin:0 0 10px; font-size:15px;">登録済みマスタ</h2>
+        <div id="masterList" class="list"></div>
+        <div id="noMaster" class="small">マスタが空です。</div>
       </div>
-
-      <div class="btnbar">
-        <button class="primary" id="btnAddMaster">マスタに追加</button>
-        <button class="ghost" id="btnSaveMaster">マスタを保存（同期）</button>
-      </div>
-
-      <div class="hr"></div>
-      <div class="small">※マスタの変更はSupabaseへ保存され、同一アカウントの他iPadへ自動同期されます（Realtime）。</div>
-    </div>
-
-    <div class="card">
-      <h2 style="margin:0 0 10px; font-size:15px;">登録済みマスタ</h2>
-      <div id="masterList" class="list"></div>
-      <div id="noMaster" class="small">マスタが空です。</div>
     </div>
   </section>
 
@@ -562,8 +635,8 @@
   // =======================
   // ここだけ差し替え
   // =======================
-  const SUPABASE_URL = "https://pftjjrluhdbovoaxnykn.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBmdGpqcmx1aGRib3ZvYXhueWtuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMzUzMTUsImV4cCI6MjA4NjcxMTMxNX0.qX-LpvYcbu589h96FdxJmUEqYto64wniBcuGXraJaoU";
+  const SUPABASE_URL = "https://xxxxx.supabase.co";
+  const SUPABASE_ANON_KEY = "YOUR_ANON_KEY";
   // =======================
 
   const { createClient } = supabase;
@@ -910,7 +983,7 @@
       guests: guests ?? null,
       drinkPricePerHeadYen: drinkPricePerHeadYen ?? null,
       salesYen,
-      costRate, // 0.28 みたいな値（表示は%）
+      costRate,
       drinkBaseMin: 90,
       extensionCount: ext,
       durationMin,
@@ -1152,7 +1225,7 @@
         </div>
 
         <div class="controls" data-itemid="${escapeHtml(it.id)}">
-          <div class="ctrlBox startBox">
+          <div class="ctrlBox startBox startArea">
             <div class="ctrlTitle"><span>開始（赤）</span><span class="mono">${(s10/10).toFixed(1)}</span></div>
             <div class="ctrlGrid">
               <div class="stepBtn" data-field="start" data-step="-10">−1</div>
@@ -1163,7 +1236,7 @@
             </div>
           </div>
 
-          <div class="ctrlBox endBox">
+          <div class="ctrlBox endBox endArea">
             <div class="ctrlTitle"><span>終了（青）</span><span class="mono">${(e10 === null || e10 === undefined) ? "—" : (e10/10).toFixed(1)}</span></div>
             <div class="ctrlGrid">
               <div class="stepBtn" data-field="end" data-step="-10">−1</div>
@@ -1174,7 +1247,7 @@
             </div>
           </div>
 
-          <div class="usedBox">
+          <div class="usedBox usedArea">
             <div class="usedLine">使用（開始−終了）</div>
             <div class="usedVal ${usedClass} mono">${usedText}</div>
             <div class="usedLine">原価：<span class="mono">${yen(calcItemCost(it.id))}</span></div>
@@ -1221,7 +1294,7 @@
         start10[itemId] = Math.max(0, to10(n || 0));
       }else if(f === "endInput"){
         if(val === ""){
-          end10[itemId] = null; // 未入力
+          end10[itemId] = null;
         }else{
           const n = parseNumberSafe(val);
           end10[itemId] = Math.max(0, to10(n || 0));
@@ -1253,8 +1326,6 @@
     let sumCostComplete = 0;
     let sumSalesComplete = 0;
     let sumGuests = 0;
-    let sumCostAll = 0;
-    let sumSalesAll = 0;
 
     filtered.forEach(e => {
       const p = e.payload || {};
@@ -1265,9 +1336,6 @@
       const sales = (p.salesYen === null || p.salesYen === undefined) ? null : Number(p.salesYen);
       const missingEnds = Number(p.missingEnds ?? 0);
       const isComplete = !!p.isComplete;
-
-      sumCostAll += cost;
-      if(sales !== null) sumSalesAll += sales;
 
       if(isComplete){
         sumCostComplete += cost;
@@ -1414,17 +1482,6 @@
   });
 
   $("btnSaveMaster").addEventListener("click", saveMaster);
-
-  $("btnRegenDevice").addEventListener("click", () => {
-    if(!confirm("端末IDを再生成しますか？")) return;
-    localStorage.removeItem(DID_KEY);
-    $("deviceId").textContent = getOrCreateDeviceId();
-    log("device id regenerated", { deviceId: getOrCreateDeviceId() });
-  });
-
-  $("btnDump").addEventListener("click", () => {
-    log("dump", { master, masterRowUpdatedAt, eventsCount: events.length, editingEventId, start10, end10 });
-  });
 
   // realtime
   let rtChannel = null;
