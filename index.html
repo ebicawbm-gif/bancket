@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="color-scheme" content="light dark">
-  <title>宴会 見込み原価（開始/終了在庫） - Sample F</title>
+  <title>宴会 見込み原価（開始/終了在庫） - Sample G</title>
 
   <style>
     :root{
@@ -100,6 +100,36 @@
       box-shadow: 0 0 0 1px color-mix(in oklab, var(--accent) 15%, transparent) inset;
       background: color-mix(in oklab, var(--accent) 6%, transparent);
     }
+    .tab.disabled{
+      opacity:.5;
+      cursor:not-allowed;
+    }
+
+    /* ★赤い〇囲み数字（iPadでも読めるサイズ） */
+    .stepNo{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:28px;
+      height:28px;
+      border-radius:999px;
+      border:2px solid var(--danger);
+      color:var(--danger);
+      font-weight:900;
+      font-size:16px;
+      line-height:1;
+      letter-spacing:.02em;
+      transform: translateY(2px);
+      flex:0 0 auto;
+    }
+    @media (min-width: 900px) and (orientation: landscape){
+      .stepNo{
+        width:34px;
+        height:34px;
+        font-size:19px;
+        border-width:2.5px;
+      }
+    }
 
     /* ★手順マニュアル（ヘッダー付近） */
     .manualBar{
@@ -120,15 +150,10 @@
       gap:10px;
       align-items:center;
     }
-    .stepNo{
-      color: var(--danger);
-      font-weight:900;
-      letter-spacing:.02em;
-    }
     .manualChip{
       border:1px solid var(--line);
       border-radius:999px;
-      padding:4px 10px;
+      padding:6px 10px;
       background: color-mix(in oklab, var(--card) 92%, transparent);
       color: var(--text);
       font-size:12px;
@@ -426,37 +451,55 @@
       .qtyInput{ height:52px; font-size:19px; }
       .roQty{ height:52px; font-size:19px; }
     }
+
+    /* ②再読み込み必須ロック */
+    .locked{
+      pointer-events:none;
+      opacity:.55;
+      filter: saturate(.85);
+    }
+    .lockNote{
+      border:1px solid color-mix(in oklab, var(--warn) 40%, var(--line));
+      background: color-mix(in oklab, var(--warn) 8%, var(--card));
+      border-radius:14px;
+      padding:10px 12px;
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+    }
   </style>
 </head>
 
 <body>
 <header>
   <div class="top">
-    <h1>宴会 見込み原価（開始/終了在庫）- Sample F</h1>
+    <h1>宴会 見込み原価（開始/終了在庫）- Sample G</h1>
     <div class="topRight">
       <button id="btnTheme" class="themeBtn" title="テーマ切替">☀️ <span class="mono" style="font-size:12px;">LIGHT</span></button>
       <div class="pill"><span id="authState">未ログイン</span> <span class="mono" id="deviceId">—</span></div>
     </div>
   </div>
+
   <nav>
-    <button class="tab active" data-tab="banquet">宴会</button>
-    <button class="tab" data-tab="master">商品マスタ</button>
-    <button class="tab" data-tab="sync">同期/ログ</button>
+    <button class="tab active" data-tab="banquet" id="tabBtnBanquet">宴会</button>
+    <button class="tab" data-tab="master" id="tabBtnMaster">商品マスタ</button>
+    <button class="tab" data-tab="sync" id="tabBtnSync">同期/ログ</button>
   </nav>
 
-  <!-- ★手順マニュアル（ヘッダー付近に固定表示） -->
+  <!-- ★手順マニュアル（②が追加され、以降が1つずつ繰り下げ） -->
   <div class="manualBar">
     <div class="manualLine">
-      <span class="manualChip"><span class="stepNo">①</span>ログイン</span>
-      <span class="manualChip"><span class="stepNo">②</span>宴会情報入力</span>
-      <span class="manualChip"><span class="stepNo">③</span>商品入力（開始）</span>
-      <span class="manualChip"><span class="stepNo">④</span>開始確定</span>
-      <span class="manualChip"><span class="stepNo">⑤</span>終了入力</span>
-      <span class="manualChip"><span class="stepNo">⑥</span>宴会保存</span>
+      <span class="manualChip"><span class="stepNo">1</span>ログイン</span>
+      <span class="manualChip"><span class="stepNo">2</span>データ再読み込み（必須）</span>
+      <span class="manualChip"><span class="stepNo">3</span>宴会情報入力</span>
+      <span class="manualChip"><span class="stepNo">4</span>商品入力（開始）</span>
+      <span class="manualChip"><span class="stepNo">5</span>開始確定</span>
+      <span class="manualChip"><span class="stepNo">6</span>終了入力</span>
+      <span class="manualChip"><span class="stepNo">7</span>宴会保存</span>
     </div>
     <div class="manualLine">
       <span class="manualChip">保存後：宴会一覧で確認（フィルタ可）</span>
-      <span class="manualChip">開始は「確定」したら閉じてOK（同期＆復元）</span>
+      <span class="manualChip">⑤開始確定したら閉じてOK（下書きが同期＆復元）</span>
     </div>
   </div>
 </header>
@@ -464,9 +507,10 @@
 <main>
   <!-- BANQUET -->
   <section id="tab-banquet" class="grid">
+
     <!-- ①ログイン -->
     <div class="card">
-      <h2 style="margin:0 0 10px; font-size:15px;"><span class="stepNo">①</span>ログイン（店舗共通）</h2>
+      <h2 style="margin:0 0 10px; font-size:15px;"><span class="stepNo">1</span>ログイン（店舗共通）</h2>
       <div class="row">
         <div>
           <label>店舗共通メール</label>
@@ -480,195 +524,225 @@
       <div class="btnbar">
         <button class="primary" id="btnLogin">ログイン</button>
         <button class="ghost" id="btnLogout">ログアウト</button>
-        <button class="ghost" id="btnReloadAll">データ再読込</button>
       </div>
       <div class="small">※同一アカウントでログインしている複数iPad間で、マスタ/宴会下書きが自動同期します（Realtime）。</div>
     </div>
 
-    <!-- 進行（下書き） + ④⑤⑥ -->
-    <div class="card">
-      <div class="stageWrap">
-        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-          <span class="statusDot" id="draftDot"></span>
+    <!-- ②データ再読み込み（必須） -->
+    <div class="card" id="reloadCard" style="display:none;">
+      <h2 style="margin:0 0 10px; font-size:15px;"><span class="stepNo">2</span>データ再読み込み（必須）</h2>
+      <div class="lockNote">
+        <div style="flex:0 0 auto; transform:translateY(1px);">⚠️</div>
+        <div>
+          <div style="font-weight:800; margin-bottom:4px;">ログイン直後は必ず「再読み込み」を押してください。</div>
+          <div class="small">
+            これを押すまで、宴会入力・マスタ編集・同期はロックされます。<br>
+            （現場で「ログインしたつもり」「古いデータのまま」を防ぎます）
+          </div>
+        </div>
+      </div>
+      <div class="btnbar">
+        <button class="primary" id="btnReloadNow"><span class="stepNo">2</span>データを再読み込みする</button>
+      </div>
+      <div class="small">※押した後、マスタ/宴会一覧/下書き（あれば）が最新化されます。</div>
+    </div>
+
+    <!-- ②が終わるまでロックする領域 -->
+    <div id="appArea" class="grid locked">
+
+      <!-- ★UI順変更：③宴会情報 → 進行 -->
+      <!-- ③宴会情報 -->
+      <div class="card">
+        <h2 style="margin:0 0 10px; font-size:15px;"><span class="stepNo">3</span>宴会 情報（⑤開始確定後はロック）</h2>
+
+        <div class="row">
           <div>
-            <div style="font-size:14px; font-weight:800;">進行：<span id="stageLabel">開始入力</span></div>
-            <div class="small mono" id="draftInfo">下書き：未保存</div>
+            <label>日付</label>
+            <input id="evDate" type="date" />
+          </div>
+          <div>
+            <label>人数</label>
+            <input id="evGuests" inputmode="numeric" placeholder="例：30" />
+          </div>
+          <div>
+            <label>飲み放題単価（円/人）</label>
+            <input id="evDrinkPrice" inputmode="numeric" placeholder="例：3000" />
+            <div class="small">見込み売上＝人数×単価</div>
           </div>
         </div>
 
-        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-          <div class="seg">
-            <button id="btnStageStart" class="active" type="button"><span class="stepNo">③</span>開始入力</button>
-            <button id="btnStageEnd" type="button"><span class="stepNo">⑤</span>終了入力</button>
-          </div>
-          <button class="ghost" id="btnDraftSave" type="button">途中保存（同期）</button>
-          <button class="danger" id="btnDraftClear" type="button">下書きを削除</button>
-        </div>
-      </div>
-
-      <div class="hr"></div>
-
-      <div class="btnbar" style="margin-top:0;">
-        <button class="primary" id="btnConfirmStart" type="button"><span class="stepNo">④</span>開始を確定（同期して保存）→ <span class="stepNo">⑤</span>終了入力へ</button>
-        <button class="ghost" id="btnBackToStart" type="button">開始を編集し直す（終了入力を破棄）</button>
-        <button class="primary" id="btnFinishEvent" type="button"><span class="stepNo">⑥</span>宴会を完了して保存（eventに確定）</button>
-      </div>
-
-      <div class="small" style="margin-top:8px;">
-        ✅開始は「確定」するとロックされ、閉じてもOK（下書きが同期＆復元されます）。<br>
-        ※複数端末で同時編集は上書きし合うので、基本は「担当1台」で運用推奨。
-      </div>
-    </div>
-
-    <!-- ②宴会情報 -->
-    <div class="card">
-      <h2 style="margin:0 0 10px; font-size:15px;"><span class="stepNo">②</span>宴会 情報（開始確定後はロック）</h2>
-
-      <div class="row">
-        <div>
-          <label>日付</label>
-          <input id="evDate" type="date" />
-        </div>
-        <div>
-          <label>人数</label>
-          <input id="evGuests" inputmode="numeric" placeholder="例：30" />
-        </div>
-        <div>
-          <label>飲み放題単価（円/人）</label>
-          <input id="evDrinkPrice" inputmode="numeric" placeholder="例：3000" />
-          <div class="small">見込み売上＝人数×単価</div>
-        </div>
-      </div>
-
-      <div class="row">
-        <div>
-          <label>飲み放題（基本90分 + 延長30分単位）</label>
-          <div class="row" style="margin:0;">
-            <div style="min-width:220px; flex:1;">
-              <input id="evExt" inputmode="numeric" placeholder="延長回数（0〜）例：1" />
-              <div class="small">延長回数 × 30分</div>
-            </div>
-            <div class="kpi" style="flex:1;">
-              <div class="t">合計時間</div>
-              <div class="v mono" id="evDuration">90分</div>
+        <div class="row">
+          <div>
+            <label>飲み放題（基本90分 + 延長30分単位）</label>
+            <div class="row" style="margin:0;">
+              <div style="min-width:220px; flex:1;">
+                <input id="evExt" inputmode="numeric" placeholder="延長回数（0〜）例：1" />
+                <div class="small">延長回数 × 30分</div>
+              </div>
+              <div class="kpi" style="flex:1;">
+                <div class="t">合計時間</div>
+                <div class="v mono" id="evDuration">90分</div>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div>
-          <label>着席 / 立食</label>
-          <select id="evStyle">
-            <option value="seated">着席</option>
-            <option value="standing">立食</option>
-          </select>
-        </div>
+          <div>
+            <label>着席 / 立食</label>
+            <select id="evStyle">
+              <option value="seated">着席</option>
+              <option value="standing">立食</option>
+            </select>
+          </div>
 
-        <div>
-          <label>バーカウンター担当者（1〜2名、カンマ区切り）</label>
-          <input id="evStaff" placeholder="例：山田, 佐藤" />
-        </div>
-      </div>
-
-      <div class="hr"></div>
-
-      <div class="kpiGrid">
-        <div class="kpi">
-          <div class="t">見込み原価（終了入力分のみ）</div>
-          <div class="v mono" id="kpiThisCost">¥0</div>
-          <div class="small" id="kpiMissingEnds">未入力 0</div>
-        </div>
-
-        <div class="kpi">
-          <div class="t">見込み売上（人数×単価）</div>
-          <div class="v mono" id="kpiThisSales">—</div>
-          <div class="small" id="kpiSalesHint">人数と単価を入れると計算</div>
-        </div>
-
-        <div class="kpi">
-          <div class="t">見込み原価率（原価÷売上）</div>
-          <div class="v mono" id="kpiThisCostRate">—</div>
-          <div class="small" id="kpiThisStatus">状態：未確定</div>
-        </div>
-
-        <div class="kpi">
-          <div class="t">商品点数（使用数&gt;0）</div>
-          <div class="v mono" id="kpiThisItems">0</div>
-          <div class="small">使用数＝開始−終了</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ③商品入力 + 目安一括入力ボタン -->
-    <div class="card">
-      <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:10px; flex-wrap:wrap;">
-        <div>
-          <h2 style="margin:0 0 6px; font-size:15px;"><span class="stepNo">③</span>商品入力（開始 / 終了）</h2>
-          <div class="small" id="productsHint">
-            開始モード：開始在庫を入力 → <span class="stepNo">④</span>開始確定。終了モード：開始は固定、終了在庫を入力 → <span class="stepNo">⑥</span>保存。
+          <div>
+            <label>バーカウンター担当者（1〜2名、カンマ区切り）</label>
+            <input id="evStaff" placeholder="例：山田, 佐藤" />
           </div>
         </div>
+
+        <div class="hr"></div>
+
+        <div class="kpiGrid">
+          <div class="kpi">
+            <div class="t">見込み原価（終了入力分のみ）</div>
+            <div class="v mono" id="kpiThisCost">¥0</div>
+            <div class="small" id="kpiMissingEnds">未入力 0</div>
+          </div>
+
+          <div class="kpi">
+            <div class="t">見込み売上（人数×単価）</div>
+            <div class="v mono" id="kpiThisSales">—</div>
+            <div class="small" id="kpiSalesHint">人数と単価を入れると計算</div>
+          </div>
+
+          <div class="kpi">
+            <div class="t">見込み原価率（原価÷売上）</div>
+            <div class="v mono" id="kpiThisCostRate">—</div>
+            <div class="small" id="kpiThisStatus">状態：未確定</div>
+          </div>
+
+          <div class="kpi">
+            <div class="t">商品点数（使用数&gt;0）</div>
+            <div class="v mono" id="kpiThisItems">0</div>
+            <div class="small">使用数＝開始−終了</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 進行（下書き） + ⑤⑥⑦ -->
+      <div class="card">
+        <div class="stageWrap">
+          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <span class="statusDot" id="draftDot"></span>
+            <div>
+              <div style="font-size:14px; font-weight:800;">進行：<span id="stageLabel">開始入力</span></div>
+              <div class="small mono" id="draftInfo">下書き：未保存</div>
+            </div>
+          </div>
+
+          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <div class="seg">
+              <button id="btnStageStart" class="active" type="button"><span class="stepNo">4</span>開始入力</button>
+              <button id="btnStageEnd" type="button"><span class="stepNo">6</span>終了入力</button>
+            </div>
+            <button class="ghost" id="btnDraftSave" type="button">途中保存（同期）</button>
+            <button class="danger" id="btnDraftClear" type="button">下書きを削除</button>
+          </div>
+        </div>
+
+        <div class="hr"></div>
 
         <div class="btnbar" style="margin-top:0;">
-          <button class="primary" id="btnAutofillMin" type="button">
-            目安まで一括入力（開始）
+          <button class="primary" id="btnConfirmStart" type="button">
+            <span class="stepNo">5</span>開始を確定（同期して保存）→ <span class="stepNo">6</span>終了入力へ
+          </button>
+          <button class="ghost" id="btnBackToStart" type="button">
+            開始を編集し直す（終了入力を破棄）
+          </button>
+          <button class="primary" id="btnFinishEvent" type="button">
+            <span class="stepNo">7</span>宴会を完了して保存（eventに確定）
           </button>
         </div>
+
+        <div class="small" style="margin-top:8px;">
+          ✅⑤開始確定後は「開始」と「宴会情報」がロックされます（事故防止）。<br>
+          ※複数端末で同時編集は上書きし合うので、基本は「担当1台」で運用推奨。
+        </div>
       </div>
 
-      <div class="hr"></div>
+      <!-- ④商品入力 + 目安一括入力ボタン -->
+      <div class="card">
+        <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+          <div>
+            <h2 style="margin:0 0 6px; font-size:15px;"><span class="stepNo">4</span>商品入力（開始 / 終了）</h2>
+            <div class="small" id="productsHint">
+              開始モード：④商品入力 → ⑤開始確定。終了モード：開始は固定、⑥終了入力 → ⑦保存。
+            </div>
+          </div>
 
-      <div id="products" class="list"></div>
-      <div id="noProducts" class="small">商品マスタが空です。「商品マスタ」タブで先に登録してください。</div>
-    </div>
-
-    <!-- 一覧 -->
-    <div class="card">
-      <h2 style="margin:0 0 10px; font-size:15px;">宴会一覧（保存済み）＋累計</h2>
-
-      <div class="row">
-        <div>
-          <label>フィルタ（開始日）</label>
-          <input id="fFrom" type="date" />
-        </div>
-        <div>
-          <label>フィルタ（終了日）</label>
-          <input id="fTo" type="date" />
-        </div>
-        <div>
-          <label>操作</label>
           <div class="btnbar" style="margin-top:0;">
-            <button class="ghost" id="btnClearFilter">フィルタ解除</button>
+            <button class="primary" id="btnAutofillMin" type="button">
+              目安まで一括入力（開始）
+            </button>
           </div>
         </div>
+
+        <div class="hr"></div>
+
+        <div id="products" class="list"></div>
+        <div id="noProducts" class="small">商品マスタが空です。「商品マスタ」タブで先に登録してください。</div>
       </div>
 
-      <div class="kpiGrid" style="margin-top:10px;">
-        <div class="kpi">
-          <div class="t">累計 見込み原価（確定のみ）</div>
-          <div class="v mono" id="kpiSumCostComplete">¥0</div>
-          <div class="small">未入力が無い宴会のみ</div>
+      <!-- 一覧 -->
+      <div class="card">
+        <h2 style="margin:0 0 10px; font-size:15px;">宴会一覧（保存済み）＋累計</h2>
+
+        <div class="row">
+          <div>
+            <label>フィルタ（開始日）</label>
+            <input id="fFrom" type="date" />
+          </div>
+          <div>
+            <label>フィルタ（終了日）</label>
+            <input id="fTo" type="date" />
+          </div>
+          <div>
+            <label>操作</label>
+            <div class="btnbar" style="margin-top:0;">
+              <button class="ghost" id="btnClearFilter">フィルタ解除</button>
+            </div>
+          </div>
         </div>
-        <div class="kpi">
-          <div class="t">累計 見込み売上（確定のみ）</div>
-          <div class="v mono" id="kpiSumSalesComplete">¥0</div>
-          <div class="small">人数×単価（未入力は除外）</div>
+
+        <div class="kpiGrid" style="margin-top:10px;">
+          <div class="kpi">
+            <div class="t">累計 見込み原価（確定のみ）</div>
+            <div class="v mono" id="kpiSumCostComplete">¥0</div>
+            <div class="small">未入力が無い宴会のみ</div>
+          </div>
+          <div class="kpi">
+            <div class="t">累計 見込み売上（確定のみ）</div>
+            <div class="v mono" id="kpiSumSalesComplete">¥0</div>
+            <div class="small">人数×単価（未入力は除外）</div>
+          </div>
+          <div class="kpi">
+            <div class="t">累計 原価率（確定のみ）</div>
+            <div class="v mono" id="kpiSumCostRateComplete">—</div>
+            <div class="small">原価÷売上</div>
+          </div>
+          <div class="kpi">
+            <div class="t">累計 人数 / 平均（原価/人）</div>
+            <div class="v mono" id="kpiSumGuests">0</div>
+            <div class="small mono" id="kpiAvgPerHead">—</div>
+          </div>
         </div>
-        <div class="kpi">
-          <div class="t">累計 原価率（確定のみ）</div>
-          <div class="v mono" id="kpiSumCostRateComplete">—</div>
-          <div class="small">原価÷売上</div>
-        </div>
-        <div class="kpi">
-          <div class="t">累計 人数 / 平均（原価/人）</div>
-          <div class="v mono" id="kpiSumGuests">0</div>
-          <div class="small mono" id="kpiAvgPerHead">—</div>
-        </div>
+
+        <div class="hr"></div>
+        <div id="events" class="list"></div>
+        <div id="noEvents" class="small">まだ宴会がありません。</div>
       </div>
 
-      <div class="hr"></div>
-      <div id="events" class="list"></div>
-      <div id="noEvents" class="small">まだ宴会がありません。</div>
-    </div>
+    </div><!-- /appArea locked -->
   </section>
 
   <!-- MASTER -->
@@ -696,7 +770,7 @@
           <div>
             <label>最低用意数（本）</label>
             <input id="mMin" inputmode="decimal" placeholder="例：6（目安）" />
-            <div class="small">初心者が準備しやすい目安。宴会の開始で「目安一括入力」に使います。</div>
+            <div class="small">初心者が準備しやすい目安。④開始入力の「目安一括入力」に使います。</div>
           </div>
         </div>
 
@@ -797,6 +871,7 @@
   // tabs
   document.querySelectorAll(".tab").forEach(btn => {
     btn.addEventListener("click", () => {
+      if(btn.classList.contains("disabled")) return;
       document.querySelectorAll(".tab").forEach(x => x.classList.remove("active"));
       btn.classList.add("active");
       const tab = btn.dataset.tab;
@@ -807,6 +882,23 @@
       if(tab === "banquet") { renderProducts(); renderEvents(); }
     });
   });
+
+  // ===== ②再読み込みを必須化する =====
+  let mustReload = false;
+  function setMustReload(on){
+    mustReload = !!on;
+    $("reloadCard").style.display = mustReload ? "" : "none";
+    $("appArea").classList.toggle("locked", mustReload);
+
+    // タブも制限（宴会以外を触らせない）
+    $("tabBtnMaster").classList.toggle("disabled", mustReload);
+    $("tabBtnSync").classList.toggle("disabled", mustReload);
+
+    if(mustReload){
+      // 必ず宴会タブに戻す
+      $("tabBtnBanquet").click();
+    }
+  }
 
   // state
   let master = { version:1, items:[], lastSavedAt:null, lastSavedBy:null };
@@ -984,8 +1076,8 @@
 
     const status =
       (stage === "start")
-        ? "状態：開始入力中（終了未入力）"
-        : ((missingEnds === 0) ? "状態：確定（⑥保存可能）" : "状態：未確定（終了未入力あり）");
+        ? "状態：④開始入力中（⑥終了未入力）"
+        : ((missingEnds === 0) ? "状態：確定（⑦保存可能）" : "状態：未確定（終了未入力あり）");
     $("kpiThisStatus").textContent = status;
   }
 
@@ -1130,7 +1222,6 @@
   }
 
   function scheduleDraftSave(){
-    // ローカル即保存（事故対策）
     const payload = buildDraftPayload();
     saveLocalDraft(payload);
     draftDirty = true;
@@ -1159,7 +1250,7 @@
   }
 
   function updateStageUI(){
-    $("stageLabel").textContent = (stage === "start") ? "③開始入力" : "⑤終了入力";
+    $("stageLabel").textContent = (stage === "start") ? "④開始入力" : "⑥終了入力";
     $("btnStageStart").classList.toggle("active", stage === "start");
     $("btnStageEnd").classList.toggle("active", stage === "end");
 
@@ -1167,15 +1258,14 @@
     $("btnFinishEvent").style.display = (stage === "end") ? "" : "none";
     $("btnBackToStart").style.display = (stage === "end") ? "" : "none";
 
-    // 目安一括入力ボタン：開始モードだけ表示
     $("btnAutofillMin").style.display = (stage === "start") ? "" : "none";
 
     $("productsHint").textContent =
       (stage === "start")
-        ? "開始モード：③商品入力 → ④開始確定。目安がある商品は「目安まで一括入力」も使えます。"
-        : "終了モード：開始は固定です。⑤終了入力 → ⑥宴会を完了して保存。";
+        ? "開始モード：④商品入力 → ⑤開始確定。目安がある商品は「目安一括入力」も使えます。"
+        : "終了モード：開始は固定です。⑥終了入力 → ⑦宴会を完了して保存。";
 
-    // 開始確定後はメタ情報をロック（事故防止）
+    // ⑤開始確定後はメタ情報をロック（事故防止）
     const lock = (stage === "end");
     ["evDate","evGuests","evDrinkPrice","evExt","evStyle","evStaff"].forEach(id => {
       const el = $(id);
@@ -1203,6 +1293,7 @@
   }
 
   async function saveMaster(){
+    if(mustReload) return alert("②データ再読み込みを先に実行してください。");
     const u = await getUser();
     if(!u) return alert("先にログインして");
 
@@ -1256,8 +1347,9 @@
 
   // ===== 目安一括入力（開始） =====
   function applyMinToAllStarts(){
+    if(mustReload) return alert("②データ再読み込みを先に実行してください。");
     if(stage !== "start"){
-      alert("目安一括入力は「開始入力」モードで使えます。");
+      alert("目安一括入力は「④開始入力」モードで使えます。");
       return;
     }
     const items = master.items || [];
@@ -1323,6 +1415,7 @@
         </div>
       `;
       el.querySelector('[data-act="del"]').addEventListener("click", () => {
+        if(mustReload) return alert("②データ再読み込みを先に実行してください。");
         if(!confirm(`「${it.name}」をマスタから削除しますか？`)) return;
         master.items = master.items.filter(x => x.id !== it.id);
         delete start10[it.id];
@@ -1333,6 +1426,7 @@
         scheduleDraftSave();
       });
       el.querySelector('[data-act="edit"]').addEventListener("click", () => {
+        if(mustReload) return alert("②データ再読み込みを先に実行してください。");
         const name = prompt("商品名", it.name);
         if(name === null) return;
         const unit = prompt("単位（例：本/樽/缶）", it.unit || "本");
@@ -1448,7 +1542,7 @@
           <div class="ctrlBox endBox endArea readonly">
             <div class="ctrlTitle"><span>終了（後で）</span><span class="mono">—</span></div>
             <div class="roQty mono">—</div>
-            <div class="small">④開始確定後に入力します</div>
+            <div class="small">⑤開始確定後に入力します</div>
           </div>
         `;
 
@@ -1479,6 +1573,7 @@
 
     // delegation
     box.onclick = (ev) => {
+      if(mustReload) return;
       const btn = ev.target.closest(".stepBtn");
       if(!btn) return;
 
@@ -1504,6 +1599,7 @@
     };
 
     box.onchange = (ev) => {
+      if(mustReload) return;
       const inp = ev.target.closest(".qtyInput");
       if(!inp) return;
 
@@ -1622,13 +1718,40 @@
     scheduleDraftSave();
   }
 
+  // ★実装：⑤開始確定時に「目安ありなのに開始0」を警告
+  function warnMinButStartZero(){
+    const items = master.items || [];
+    const zeros = items.filter(it => {
+      const hasMin = it.minQty !== null && it.minQty !== undefined && Number(it.minQty) > 0;
+      if(!hasMin) return false;
+      const s = start10[it.id] || 0;
+      return s === 0;
+    });
+
+    if(!zeros.length) return true;
+
+    const showNames = zeros.slice(0, 8).map(x => `・${x.name}`).join("\n");
+    const more = zeros.length > 8 ? `\n…他 ${zeros.length - 8} 件` : "";
+    const msg =
+      `【警告】最低用意数（目安）が設定されているのに、開始が0の品があります。\n` +
+      `このまま⑤開始確定すると「入れ忘れ」の可能性があります。\n\n` +
+      `${showNames}${more}\n\n` +
+      `それでも⑤開始確定しますか？`;
+
+    return confirm(msg);
+  }
+
   async function confirmStart(){
+    if(mustReload) return alert("②データ再読み込みを先に実行してください。");
     if(!master.items?.length) return alert("商品マスタが空です。先に登録してください。");
 
     const date = $("evDate").value || "";
     if(!date) return alert("日付を入れてください");
 
-    if(!confirm("④開始を確定します。以後、開始数量と宴会情報はロックされます。よろしいですか？")) return;
+    // ★警告（目安あり開始0）
+    if(!warnMinButStartZero()) return;
+
+    if(!confirm("⑤開始を確定します。以後、開始数量と宴会情報はロックされます。よろしいですか？")) return;
 
     stage = "end";
     (master.items || []).forEach(it => { end10[it.id] = null; });
@@ -1638,11 +1761,11 @@
     recalcKpi();
     scheduleDraftSave();
 
-    // すぐ同期（確定の意図を強く残す）
     await saveRemoteDraft();
   }
 
   async function backToStart(){
+    if(mustReload) return alert("②データ再読み込みを先に実行してください。");
     if(!confirm("開始を編集し直します。現在の終了入力は破棄されます。よろしいですか？")) return;
     stage = "start";
     (master.items || []).forEach(it => end10[it.id] = null);
@@ -1729,7 +1852,8 @@
   }
 
   async function finishEvent(){
-    if(stage !== "end") return alert("まず④開始確定して、⑤終了入力に進んでください。");
+    if(mustReload) return alert("②データ再読み込みを先に実行してください。");
+    if(stage !== "end") return alert("まず⑤開始確定して、⑥終了入力に進んでください。");
 
     const payload = buildEventPayloadFromDraft();
     if(payload.missingEnds > 0){
@@ -1755,7 +1879,7 @@
     }
 
     await clearDraftAll(true);
-    alert("⑥宴会を保存しました（完了）");
+    alert("⑦宴会を保存しました（完了）");
     await loadEvents();
   }
 
@@ -1830,15 +1954,18 @@
       log("login failed", error);
       return alert("ログイン失敗: " + error.message);
     }
-    await reloadAll();
+
+    // ★ログイン後は必ず②を踏ませる
+    await refreshAuthState();
+    setMustReload(true);
+    alert("ログインできました。次に②データ再読み込み（必須）を押してください。");
   });
 
   $("btnLogout").addEventListener("click", async () => {
     await sb.auth.signOut();
     await refreshAuthState();
+    setMustReload(false); // 未ログインならロック解除（ローカル用途）
   });
-
-  $("btnReloadAll").addEventListener("click", () => reloadAll());
 
   $("btnStageStart").addEventListener("click", () => {
     if(stage === "start") return;
@@ -1854,12 +1981,14 @@
   $("btnFinishEvent").addEventListener("click", () => finishEvent().catch(()=>{}));
 
   $("btnDraftSave").addEventListener("click", async () => {
+    if(mustReload) return alert("②データ再読み込みを先に実行してください。");
     scheduleDraftSave();
     await saveRemoteDraft();
     alert("途中保存しました（同期）");
   });
 
   $("btnDraftClear").addEventListener("click", async () => {
+    if(mustReload) return alert("②データ再読み込みを先に実行してください。");
     if(!confirm("下書きを削除します。開始/終了の入力内容は消えます。よろしいですか？")) return;
     await clearDraftAll(false);
   });
@@ -1870,11 +1999,13 @@
   // meta auto-save
   ["evDate","evGuests","evDrinkPrice","evExt","evStyle","evStaff"].forEach(id => {
     $(id).addEventListener("input", () => {
+      if(mustReload) return;
       updateDurationUI();
       recalcKpi();
       scheduleDraftSave();
     });
     $(id).addEventListener("change", () => {
+      if(mustReload) return;
       updateDurationUI();
       recalcKpi();
       scheduleDraftSave();
@@ -1891,6 +2022,7 @@
 
   // master add
   $("btnAddMaster").addEventListener("click", () => {
+    if(mustReload) return alert("②データ再読み込みを先に実行してください。");
     const name = ($("mName").value || "").trim();
     const unit = ($("mUnit").value || "本").trim() || "本";
     const costYen = parseNumberSafe($("mCost").value);
@@ -1932,6 +2064,7 @@
 
   $("btnDump").addEventListener("click", () => {
     log("dump", {
+      mustReload,
       stage, draftSavedAt, draftSavedBy, draftServerUpdatedAt, draftDirty,
       masterCount: master.items?.length || 0,
       eventsCount: events.length,
@@ -1964,29 +2097,49 @@
     });
   }
 
-  async function reloadAll(){
-    const u = await refreshAuthState();
-    if(!u){
-      const local = loadLocalDraft();
-      if(local) applyDraftPayload(local);
-      else ensureDraftInitialized();
-      return;
-    }
+  async function reloadAllCore(){
     subscribeRealtime();
     await loadMaster();
     await loadEvents();
     await loadDraftPreferNewer();
   }
 
+  // ②ボタン：必須再読み込み
+  $("btnReloadNow").addEventListener("click", async () => {
+    const u = await getUser();
+    if(!u) return alert("先に①ログインしてください。");
+
+    try{
+      await reloadAllCore();
+      setMustReload(false);
+      alert("②データ再読み込み完了。③宴会情報 → ④商品入力へ進んでください。");
+    }catch(e){
+      log("reloadAllCore failed", e);
+      alert("再読み込みに失敗しました: " + (e?.message || e));
+    }
+  });
+
   // initial
   $("evDate").value = todayISO();
   $("evExt").value = "0";
   updateDurationUI();
   updateStageUI();
-  refreshAuthState().then(() => {
-    const local = loadLocalDraft();
-    if(local) applyDraftPayload(local);
-    else ensureDraftInitialized();
+  refreshAuthState().then(async () => {
+    const u = await getUser();
+
+    // 既ログイン状態でも「②必須」にする（現場事故防止）
+    if(u){
+      setMustReload(true);
+      // ローカル下書きは読み込んで表示だけはする（でもロック）
+      const local = loadLocalDraft();
+      if(local) applyDraftPayload(local);
+      else ensureDraftInitialized();
+    }else{
+      setMustReload(false);
+      const local = loadLocalDraft();
+      if(local) applyDraftPayload(local);
+      else ensureDraftInitialized();
+    }
   });
 
 })();
