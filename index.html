@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="color-scheme" content="light dark">
-  <title>宴会 見込み原価（開始/終了在庫） - Sample G</title>
+  <title>宴会 見込み原価（開始/終了在庫） - Sample H</title>
 
   <style>
     :root{
@@ -452,11 +452,11 @@
       .roQty{ height:52px; font-size:19px; }
     }
 
-    /* ②再読み込み必須ロック */
+    /* ②再読み込み必須ロック（視覚） */
     .locked{
-      pointer-events:none;
       opacity:.55;
       filter: saturate(.85);
+      pointer-events:none; /* ★ロック中は触れない（②カードは外なので触れる） */
     }
     .lockNote{
       border:1px solid color-mix(in oklab, var(--warn) 40%, var(--line));
@@ -473,7 +473,7 @@
 <body>
 <header>
   <div class="top">
-    <h1>宴会 見込み原価（開始/終了在庫）- Sample G</h1>
+    <h1>宴会 見込み原価（開始/終了在庫）- Sample H</h1>
     <div class="topRight">
       <button id="btnTheme" class="themeBtn" title="テーマ切替">☀️ <span class="mono" style="font-size:12px;">LIGHT</span></button>
       <div class="pill"><span id="authState">未ログイン</span> <span class="mono" id="deviceId">—</span></div>
@@ -486,7 +486,6 @@
     <button class="tab" data-tab="sync" id="tabBtnSync">同期/ログ</button>
   </nav>
 
-  <!-- ★手順マニュアル（②が追加され、以降が1つずつ繰り下げ） -->
   <div class="manualBar">
     <div class="manualLine">
       <span class="manualChip"><span class="stepNo">1</span>ログイン</span>
@@ -500,6 +499,7 @@
     <div class="manualLine">
       <span class="manualChip">保存後：宴会一覧で確認（フィルタ可）</span>
       <span class="manualChip">⑤開始確定したら閉じてOK（下書きが同期＆復元）</span>
+      <span class="manualChip">②は自動でも実行（失敗時は手動で再試行）</span>
     </div>
   </div>
 </header>
@@ -534,28 +534,37 @@
       <div class="lockNote">
         <div style="flex:0 0 auto; transform:translateY(1px);">⚠️</div>
         <div>
-          <div style="font-weight:800; margin-bottom:4px;">ログイン直後は必ず「再読み込み」を押してください。</div>
+          <div style="font-weight:800; margin-bottom:4px;">ログイン直後は必ず「再読み込み」が完了してから操作してください。</div>
           <div class="small">
-            これを押すまで、宴会入力・マスタ編集・同期はロックされます。<br>
-            （現場で「ログインしたつもり」「古いデータのまま」を防ぎます）
+            これが完了するまで、宴会入力・マスタ編集・同期はロックされます。<br>
+            （現場で「押し忘れ」「古いデータのまま」を防ぎます）
           </div>
         </div>
       </div>
+
       <div class="btnbar">
         <button class="primary" id="btnReloadNow"><span class="stepNo">2</span>データを再読み込みする</button>
+        <button class="ghost" id="btnReloadForce">再試行</button>
       </div>
-      <div class="small">※押した後、マスタ/宴会一覧/下書き（あれば）が最新化されます。</div>
+      <div id="reloadMsg" class="small mono" style="margin-top:8px;">—</div>
     </div>
 
     <!-- ②が終わるまでロックする領域 -->
     <div id="appArea" class="grid locked">
 
-      <!-- ★UI順変更：③宴会情報 → 進行 -->
       <!-- ③宴会情報 -->
       <div class="card">
-        <h2 style="margin:0 0 10px; font-size:15px;"><span class="stepNo">3</span>宴会 情報（⑤開始確定後はロック）</h2>
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+          <h2 style="margin:0; font-size:15px;"><span class="stepNo">3</span>宴会 情報</h2>
+          <div class="btnbar" style="margin-top:0;">
+            <button class="ghost" id="btnUnlockMeta" type="button" style="display:none;">
+              ③を編集できるように戻す（⑤を取り消す）
+            </button>
+          </div>
+        </div>
+        <div class="small" id="metaLockHint" style="margin-top:6px;">—</div>
 
-        <div class="row">
+        <div class="row" style="margin-top:10px;">
           <div>
             <label>日付</label>
             <input id="evDate" type="date" />
@@ -890,14 +899,21 @@
     $("reloadCard").style.display = mustReload ? "" : "none";
     $("appArea").classList.toggle("locked", mustReload);
 
-    // タブも制限（宴会以外を触らせない）
     $("tabBtnMaster").classList.toggle("disabled", mustReload);
     $("tabBtnSync").classList.toggle("disabled", mustReload);
 
     if(mustReload){
-      // 必ず宴会タブに戻す
       $("tabBtnBanquet").click();
     }
+  }
+
+  function setReloadMsg(text){
+    $("reloadMsg").textContent = text || "—";
+  }
+  function setReloadBusy(busy, text){
+    $("btnReloadNow").disabled = !!busy;
+    $("btnReloadForce").disabled = !!busy;
+    setReloadMsg(text || (busy ? "再読み込み中…" : "—"));
   }
 
   // state
@@ -913,8 +929,8 @@
   let draftDirty = false;
 
   // qty maps (10x for 0.1 precision)
-  let start10 = {}; // itemId -> int
-  let end10 = {};   // itemId -> int | null (null=未入力)
+  let start10 = {};
+  let end10 = {};
 
   function log(msg, obj){
     const line = `[${new Date().toISOString()}] ${msg}` + (obj ? `\n${JSON.stringify(obj,null,2)}` : "");
@@ -1273,6 +1289,12 @@
       el.disabled = lock;
     });
 
+    // ★H改善：ロック理由を③カードで明示＋戻すボタンを表示
+    $("btnUnlockMeta").style.display = lock ? "" : "none";
+    $("metaLockHint").textContent = lock
+      ? "※現在⑥終了入力中のため、③宴会情報はロックされています。③を編集したい場合は右のボタンで⑤を取り消して開始に戻してください。"
+      : "※③宴会情報を入力して④開始入力→⑤開始確定の流れです。";
+
     updateDraftInfoUI("");
   }
 
@@ -1293,7 +1315,7 @@
   }
 
   async function saveMaster(){
-    if(mustReload) return alert("②データ再読み込みを先に実行してください。");
+    if(mustReload) return alert("②データ再読み込みが完了するまで操作できません。");
     const u = await getUser();
     if(!u) return alert("先にログインして");
 
@@ -1338,7 +1360,7 @@
 
     if(error){
       log("loadEvents error", error);
-      return alert("宴会読み込みエラー: " + error.message);
+      throw error;
     }
     events = data || [];
     $("eventsCount").textContent = String(events.length);
@@ -1347,7 +1369,7 @@
 
   // ===== 目安一括入力（開始） =====
   function applyMinToAllStarts(){
-    if(mustReload) return alert("②データ再読み込みを先に実行してください。");
+    if(mustReload) return alert("②データ再読み込みが完了するまで操作できません。");
     if(stage !== "start"){
       alert("目安一括入力は「④開始入力」モードで使えます。");
       return;
@@ -1415,7 +1437,7 @@
         </div>
       `;
       el.querySelector('[data-act="del"]').addEventListener("click", () => {
-        if(mustReload) return alert("②データ再読み込みを先に実行してください。");
+        if(mustReload) return alert("②データ再読み込みが完了するまで操作できません。");
         if(!confirm(`「${it.name}」をマスタから削除しますか？`)) return;
         master.items = master.items.filter(x => x.id !== it.id);
         delete start10[it.id];
@@ -1426,7 +1448,7 @@
         scheduleDraftSave();
       });
       el.querySelector('[data-act="edit"]').addEventListener("click", () => {
-        if(mustReload) return alert("②データ再読み込みを先に実行してください。");
+        if(mustReload) return alert("②データ再読み込みが完了するまで操作できません。");
         const name = prompt("商品名", it.name);
         if(name === null) return;
         const unit = prompt("単位（例：本/樽/缶）", it.unit || "本");
@@ -1718,38 +1740,43 @@
     scheduleDraftSave();
   }
 
-  // ★実装：⑤開始確定時に「目安ありなのに開始0」を警告
-  function warnMinButStartZero(){
+  // ★H改善：⑤開始確定時「目安あり」商品の開始が “0” だけでなく “不足（開始 < 目安）” も警告
+  function warnStartBelowMin(){
     const items = master.items || [];
-    const zeros = items.filter(it => {
-      const hasMin = it.minQty !== null && it.minQty !== undefined && Number(it.minQty) > 0;
-      if(!hasMin) return false;
-      const s = start10[it.id] || 0;
-      return s === 0;
-    });
+    const shortages = items
+      .map(it => {
+        const minQty = it.minQty;
+        const hasMin = minQty !== null && minQty !== undefined && Number(minQty) > 0;
+        if(!hasMin) return null;
+        const min10 = to10(minQty);
+        const s10 = start10[it.id] || 0;
+        if(s10 >= min10) return null;
+        return { name: it.name, start: (s10/10), min: Number(minQty) };
+      })
+      .filter(Boolean);
 
-    if(!zeros.length) return true;
+    if(!shortages.length) return true;
 
-    const showNames = zeros.slice(0, 8).map(x => `・${x.name}`).join("\n");
-    const more = zeros.length > 8 ? `\n…他 ${zeros.length - 8} 件` : "";
+    const show = shortages.slice(0, 8).map(x => `・${x.name}（開始${x.start.toFixed(1)} < 目安${x.min.toFixed(1)}）`).join("\n");
+    const more = shortages.length > 8 ? `\n…他 ${shortages.length - 8} 件` : "";
     const msg =
-      `【警告】最低用意数（目安）が設定されているのに、開始が0の品があります。\n` +
-      `このまま⑤開始確定すると「入れ忘れ」の可能性があります。\n\n` +
-      `${showNames}${more}\n\n` +
+      `【警告】最低用意数（目安）より開始在庫が少ない品があります。\n` +
+      `このまま⑤開始確定すると「入れ忘れ/準備不足」の可能性があります。\n\n` +
+      `${show}${more}\n\n` +
       `それでも⑤開始確定しますか？`;
 
     return confirm(msg);
   }
 
   async function confirmStart(){
-    if(mustReload) return alert("②データ再読み込みを先に実行してください。");
+    if(mustReload) return alert("②データ再読み込みが完了するまで操作できません。");
     if(!master.items?.length) return alert("商品マスタが空です。先に登録してください。");
 
     const date = $("evDate").value || "";
     if(!date) return alert("日付を入れてください");
 
-    // ★警告（目安あり開始0）
-    if(!warnMinButStartZero()) return;
+    // ★警告（不足含む）
+    if(!warnStartBelowMin()) return;
 
     if(!confirm("⑤開始を確定します。以後、開始数量と宴会情報はロックされます。よろしいですか？")) return;
 
@@ -1765,7 +1792,7 @@
   }
 
   async function backToStart(){
-    if(mustReload) return alert("②データ再読み込みを先に実行してください。");
+    if(mustReload) return alert("②データ再読み込みが完了するまで操作できません。");
     if(!confirm("開始を編集し直します。現在の終了入力は破棄されます。よろしいですか？")) return;
     stage = "start";
     (master.items || []).forEach(it => end10[it.id] = null);
@@ -1852,7 +1879,7 @@
   }
 
   async function finishEvent(){
-    if(mustReload) return alert("②データ再読み込みを先に実行してください。");
+    if(mustReload) return alert("②データ再読み込みが完了するまで操作できません。");
     if(stage !== "end") return alert("まず⑤開始確定して、⑥終了入力に進んでください。");
 
     const payload = buildEventPayloadFromDraft();
@@ -1943,6 +1970,78 @@
     updateDraftInfoUI("新規");
   }
 
+  // ===== realtime =====
+  let rtChannel = null;
+  function subscribeRealtime(){
+    if(rtChannel) return;
+
+    rtChannel = sb.channel("banquet-docs-sync");
+    rtChannel.on("postgres_changes", { event:"*", schema:"public", table:"docs" }, (payload) => {
+      const n = payload.new;
+      if(!n) return;
+
+      if(n.kind === "master" && n.doc_key === "main"){
+        loadMaster().catch(e => log("loadMaster failed", e));
+      }
+      if(n.kind === "event"){
+        loadEvents().catch(e => log("loadEvents failed", e));
+      }
+      if(n.kind === DRAFT_KIND && n.doc_key === DRAFT_KEY){
+        loadDraftPreferNewer().catch(e => log("loadDraftPreferNewer failed", e));
+      }
+    }).subscribe((status) => {
+      $("rtState").textContent = status;
+      log("realtime subscribe", { status });
+    });
+  }
+
+  // ★H改善：部分失敗でも「マスタが取れたらロック解除」できる安全リロード
+  async function reloadAllCoreSafe(){
+    subscribeRealtime();
+    const res = await Promise.allSettled([
+      loadMaster(),
+      loadEvents(),
+      loadDraftPreferNewer()
+    ]);
+    const masterOk = res[0].status === "fulfilled";
+    const eventsOk = res[1].status === "fulfilled";
+    const draftOk  = res[2].status === "fulfilled";
+    return { masterOk, eventsOk, draftOk, res };
+  }
+
+  async function runMandatoryReload(autoLabel){
+    const u = await getUser();
+    if(!u) return;
+
+    setMustReload(true);
+    setReloadBusy(true, autoLabel ? `自動で②再読み込み中…（${autoLabel}）` : "②再読み込み中…");
+
+    try{
+      const r = await reloadAllCoreSafe();
+
+      if(!r.masterOk){
+        const reason = r.res[0].reason;
+        log("reload master failed", reason);
+        setReloadBusy(false, "再読み込み失敗：マスタ取得に失敗（ネット/権限/RLS等）。再試行してください。");
+        return;
+      }
+
+      // マスタが取れたら解除（イベント/下書きが失敗しても運用は開始できる）
+      setMustReload(false);
+
+      const msg =
+        `②再読み込み完了。` +
+        `${r.eventsOk ? "" : "（宴会一覧の取得が失敗：後で再試行可）"}` +
+        `${r.draftOk ? "" : "（下書き同期が失敗：ローカルはOK）"}`;
+      setReloadBusy(false, msg);
+    }catch(e){
+      log("runMandatoryReload failed", e);
+      setReloadBusy(false, "再読み込み失敗：" + (e?.message || e));
+    }finally{
+      setReloadBusy(false, $("reloadMsg").textContent);
+    }
+  }
+
   // ===== UI handlers =====
   $("btnLogin").addEventListener("click", async () => {
     const email = ($("email").value || "").trim();
@@ -1955,16 +2054,30 @@
       return alert("ログイン失敗: " + error.message);
     }
 
-    // ★ログイン後は必ず②を踏ませる
     await refreshAuthState();
-    setMustReload(true);
-    alert("ログインできました。次に②データ再読み込み（必須）を押してください。");
+
+    // ★H改善：ログイン直後に②を自動実行（押し忘れ対策）
+    await runMandatoryReload("ログイン直後");
+    alert("ログインOK。③宴会情報 → ④開始入力へ進んでください。");
   });
 
   $("btnLogout").addEventListener("click", async () => {
     await sb.auth.signOut();
     await refreshAuthState();
-    setMustReload(false); // 未ログインならロック解除（ローカル用途）
+    setMustReload(false);
+    setReloadMsg("—");
+  });
+
+  $("btnReloadNow").addEventListener("click", async () => {
+    const u = await getUser();
+    if(!u) return alert("先に①ログインしてください。");
+    await runMandatoryReload("手動");
+    if(!mustReload) alert("②完了。③宴会情報 → ④開始入力へ進んでください。");
+  });
+  $("btnReloadForce").addEventListener("click", async () => {
+    const u = await getUser();
+    if(!u) return alert("先に①ログインしてください。");
+    await runMandatoryReload("再試行");
   });
 
   $("btnStageStart").addEventListener("click", () => {
@@ -1980,20 +2093,22 @@
   $("btnBackToStart").addEventListener("click", () => backToStart().catch(()=>{}));
   $("btnFinishEvent").addEventListener("click", () => finishEvent().catch(()=>{}));
 
+  // ★③カード右上の「編集できるように戻す」＝backToStart
+  $("btnUnlockMeta").addEventListener("click", () => backToStart().catch(()=>{}));
+
   $("btnDraftSave").addEventListener("click", async () => {
-    if(mustReload) return alert("②データ再読み込みを先に実行してください。");
+    if(mustReload) return alert("②データ再読み込みが完了するまで操作できません。");
     scheduleDraftSave();
     await saveRemoteDraft();
     alert("途中保存しました（同期）");
   });
 
   $("btnDraftClear").addEventListener("click", async () => {
-    if(mustReload) return alert("②データ再読み込みを先に実行してください。");
+    if(mustReload) return alert("②データ再読み込みが完了するまで操作できません。");
     if(!confirm("下書きを削除します。開始/終了の入力内容は消えます。よろしいですか？")) return;
     await clearDraftAll(false);
   });
 
-  // ★目安一括入力
   $("btnAutofillMin").addEventListener("click", () => applyMinToAllStarts());
 
   // meta auto-save
@@ -2020,9 +2135,8 @@
   $("fFrom").addEventListener("change", renderEvents);
   $("fTo").addEventListener("change", renderEvents);
 
-  // master add
   $("btnAddMaster").addEventListener("click", () => {
-    if(mustReload) return alert("②データ再読み込みを先に実行してください。");
+    if(mustReload) return alert("②データ再読み込みが完了するまで操作できません。");
     const name = ($("mName").value || "").trim();
     const unit = ($("mUnit").value || "本").trim() || "本";
     const costYen = parseNumberSafe($("mCost").value);
@@ -2072,53 +2186,6 @@
     });
   });
 
-  // ===== realtime =====
-  let rtChannel = null;
-  function subscribeRealtime(){
-    if(rtChannel) return;
-
-    rtChannel = sb.channel("banquet-docs-sync");
-    rtChannel.on("postgres_changes", { event:"*", schema:"public", table:"docs" }, (payload) => {
-      const n = payload.new;
-      if(!n) return;
-
-      if(n.kind === "master" && n.doc_key === "main"){
-        loadMaster().catch(e => log("loadMaster failed", e));
-      }
-      if(n.kind === "event"){
-        loadEvents().catch(e => log("loadEvents failed", e));
-      }
-      if(n.kind === DRAFT_KIND && n.doc_key === DRAFT_KEY){
-        loadDraftPreferNewer().catch(e => log("loadDraftPreferNewer failed", e));
-      }
-    }).subscribe((status) => {
-      $("rtState").textContent = status;
-      log("realtime subscribe", { status });
-    });
-  }
-
-  async function reloadAllCore(){
-    subscribeRealtime();
-    await loadMaster();
-    await loadEvents();
-    await loadDraftPreferNewer();
-  }
-
-  // ②ボタン：必須再読み込み
-  $("btnReloadNow").addEventListener("click", async () => {
-    const u = await getUser();
-    if(!u) return alert("先に①ログインしてください。");
-
-    try{
-      await reloadAllCore();
-      setMustReload(false);
-      alert("②データ再読み込み完了。③宴会情報 → ④商品入力へ進んでください。");
-    }catch(e){
-      log("reloadAllCore failed", e);
-      alert("再読み込みに失敗しました: " + (e?.message || e));
-    }
-  });
-
   // initial
   $("evDate").value = todayISO();
   $("evExt").value = "0";
@@ -2127,13 +2194,9 @@
   refreshAuthState().then(async () => {
     const u = await getUser();
 
-    // 既ログイン状態でも「②必須」にする（現場事故防止）
     if(u){
-      setMustReload(true);
-      // ローカル下書きは読み込んで表示だけはする（でもロック）
-      const local = loadLocalDraft();
-      if(local) applyDraftPayload(local);
-      else ensureDraftInitialized();
+      // ★H改善：既ログイン状態でも②を自動実行（押し忘れ/古い状態のまま防止）
+      await runMandatoryReload("起動時");
     }else{
       setMustReload(false);
       const local = loadLocalDraft();
