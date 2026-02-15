@@ -3,275 +3,1472 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>宴会アプリ（土台A：JSON1枚同期）</title>
+  <meta name="color-scheme" content="light dark">
+  <title>宴会 見込み原価（開始/終了在庫） - Sample C改</title>
   <style>
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP",sans-serif;max-width:960px;margin:18px auto;padding:0 12px}
-    h1{font-size:18px;margin:0 0 12px}
-    input,button,textarea{font-size:16px;padding:10px;border-radius:10px;border:1px solid #ddd}
-    button{cursor:pointer;background:#111;color:#fff;border-color:#111}
-    button.secondary{background:#fff;color:#111}
-    button.warn{background:#b00020;border-color:#b00020}
-    textarea{width:100%;min-height:360px;margin-top:10px;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
-    .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-    .pill{padding:6px 10px;border:1px solid #ddd;border-radius:999px;font-size:12px;background:#fafafa}
-    .muted{color:#666;font-size:12px}
-    hr{margin:14px 0;border:0;border-top:1px solid #eee}
-    pre{background:#0b0b0c;color:#f2f3f4;padding:10px;border-radius:12px;overflow:auto}
+    :root{
+      --bg:#f6f7f9;
+      --card:#ffffff;
+      --muted:#5f6368;
+      --text:#111827;
+      --line:#e5e7eb;
+      --accent:#2563eb;
+      --danger:#dc2626;
+      --warn:#d97706;
+
+      --input-bg:#ffffff;
+      --input-text:#111827;
+      --input-border:#d1d5db;
+
+      --shadow: 0 10px 30px rgba(0,0,0,.08);
+      --radius:16px;
+    }
+    :root[data-theme="dark"]{
+      --bg:#0b0b0c;
+      --card:#141416;
+      --muted:#9aa0a6;
+      --text:#f2f3f4;
+      --line:#26282c;
+      --accent:#66e3ff;
+      --danger:#ff6b6b;
+      --warn:#ffb020;
+
+      --input-bg:#0f1012;
+      --input-text:#f2f3f4;
+      --input-border:#26282c;
+
+      --shadow: 0 10px 30px rgba(0,0,0,.25);
+    }
+
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Noto Sans JP","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
+      background: var(--bg);
+      color:var(--text);
+    }
+    header{
+      position:sticky; top:0; z-index:5;
+      background: color-mix(in oklab, var(--bg) 92%, transparent);
+      backdrop-filter: blur(10px);
+      border-bottom:1px solid var(--line);
+      padding:14px;
+    }
+    .top{ display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap; }
+    h1{ margin:0; font-size:16px; letter-spacing:.02em; }
+    .topRight{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+
+    .pill{
+      border:1px solid var(--line);
+      border-radius:999px;
+      padding:6px 10px;
+      font-size:12px;
+      color:var(--muted);
+      display:inline-flex; gap:8px; align-items:center;
+      background: color-mix(in oklab, var(--card) 80%, transparent);
+    }
+    .themeBtn{
+      padding:8px 10px;
+      border-radius:999px;
+      font-size:13px;
+      line-height:1;
+      display:inline-flex;
+      gap:8px;
+      align-items:center;
+      border:1px solid var(--line);
+      background: color-mix(in oklab, var(--card) 85%, var(--bg));
+      color:var(--text);
+      cursor:pointer;
+    }
+
+    nav{ display:flex; gap:8px; margin-top:10px; }
+    .tab{
+      flex:1;
+      background:transparent;
+      border:1px solid var(--line);
+      color:var(--muted);
+      padding:10px 8px;
+      border-radius:999px;
+      font-size:13px;
+      cursor:pointer;
+    }
+    .tab.active{
+      color:var(--text);
+      border-color: color-mix(in oklab, var(--accent) 55%, var(--line));
+      box-shadow: 0 0 0 1px color-mix(in oklab, var(--accent) 15%, transparent) inset;
+      background: color-mix(in oklab, var(--accent) 6%, transparent);
+    }
+
+    main{ padding:14px; max-width:1150px; margin:0 auto; }
+    .grid{ display:grid; gap:12px; }
+
+    .card{
+      background: var(--card);
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      padding:14px;
+      box-shadow: var(--shadow);
+    }
+
+    .row{ display:flex; gap:10px; flex-wrap:wrap; }
+    .row > *{ flex:1; min-width:160px; }
+
+    label{ display:block; font-size:12px; color:var(--muted); margin:0 0 6px; }
+
+    input, select, textarea{
+      width:100%;
+      background: var(--input-bg);
+      color: var(--input-text);
+      border:1px solid var(--input-border);
+      border-radius:12px;
+      padding:12px;
+      font-size:14px;
+      outline:none;
+    }
+    textarea{ min-height:90px; resize: vertical; }
+
+    button{
+      border:1px solid var(--line);
+      background: color-mix(in oklab, var(--card) 85%, var(--bg));
+      color:var(--text);
+      padding:10px 12px;
+      border-radius:12px;
+      font-size:14px;
+      cursor:pointer;
+    }
+    button.primary{
+      border-color: color-mix(in oklab, var(--accent) 60%, var(--line));
+      background: color-mix(in oklab, var(--accent) 10%, var(--card));
+    }
+    button.danger{
+      border-color: color-mix(in oklab, var(--danger) 65%, var(--line));
+      background: color-mix(in oklab, var(--danger) 10%, var(--card));
+    }
+    button.ghost{ background:transparent; }
+
+    .btnbar{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+    .hr{ height:1px; background:var(--line); margin:12px 0; }
+    .small{ font-size:12px; color:var(--muted); line-height:1.5; }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace; }
+
+    /* KPI: 画面幅に応じて自動段組 */
+    .kpiGrid{ display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:10px; }
+    .kpi{
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:10px 12px;
+      background: color-mix(in oklab, var(--card) 92%, var(--bg));
+    }
+    .kpi .t{ font-size:12px; color:var(--muted); }
+    .kpi .v{ font-size:18px; margin-top:4px; }
+
+    .list{ display:grid; gap:10px; }
+    .item{
+      border:1px solid var(--line);
+      background: color-mix(in oklab, var(--card) 92%, var(--bg));
+      border-radius:14px;
+      padding:12px;
+    }
+    .itemHeader{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+    .itemHeader h3{ margin:0; font-size:14px; }
+    .badge{
+      font-size:11px; color:var(--muted);
+      padding:4px 8px; border:1px solid var(--line);
+      border-radius:999px; white-space:nowrap;
+      background: color-mix(in oklab, var(--card) 80%, transparent);
+      display:inline-flex; align-items:center; gap:6px;
+    }
+    .badge.warn{
+      color: color-mix(in oklab, var(--warn) 80%, var(--text));
+      border-color: color-mix(in oklab, var(--warn) 45%, var(--line));
+      background: color-mix(in oklab, var(--warn) 8%, var(--card));
+    }
+    .badge.bad{
+      color: color-mix(in oklab, var(--danger) 85%, var(--text));
+      border-color: color-mix(in oklab, var(--danger) 45%, var(--line));
+      background: color-mix(in oklab, var(--danger) 8%, var(--card));
+    }
+
+    /* Product rows */
+    .prodRow{
+      display:grid;
+      grid-template-columns: 1fr 560px;
+      gap:10px;
+      align-items:center;
+      padding:12px 0;
+      border-top:1px dashed color-mix(in oklab, var(--text) 12%, transparent);
+    }
+    .prodRow:first-child{ border-top:none; padding-top:0; }
+
+    /* ④ 商品名：ちょい大きめ＋中央揃え */
+    .prodName{
+      font-size:16px;
+      font-weight:700;
+      text-align:center;
+      letter-spacing:.02em;
+    }
+    .prodMeta{
+      font-size:12px;
+      color:var(--muted);
+      margin-top:6px;
+      text-align:center;
+    }
+
+    .controls{
+      display:grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap:10px;
+      align-items:center;
+    }
+
+    .ctrlBox{
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:10px;
+      background: color-mix(in oklab, var(--card) 92%, var(--bg));
+    }
+
+    /* ③ 開始/終了の淡い色分け（ラベルもあるので色弱でも判別しやすい） */
+    .ctrlBox.startBox{
+      background: color-mix(in oklab, #ef4444 7%, var(--card));
+      border-color: color-mix(in oklab, #ef4444 22%, var(--line));
+    }
+    .ctrlBox.endBox{
+      background: color-mix(in oklab, #3b82f6 7%, var(--card));
+      border-color: color-mix(in oklab, #3b82f6 22%, var(--line));
+    }
+
+    .ctrlTitle{
+      display:flex; justify-content:space-between; align-items:center;
+      font-size:12px; color:var(--muted);
+      margin-bottom:10px;
+    }
+
+    /* ④ 開始/終了を少し大きく（レイアウト崩れない範囲） */
+    .ctrlGrid{
+      display:grid;
+      grid-template-columns: 48px 62px 1fr 62px 48px;
+      gap:8px;
+      align-items:center;
+    }
+    .stepBtn{
+      height:48px;
+      display:flex; align-items:center; justify-content:center;
+      border-radius:12px;
+      border:1px solid var(--line);
+      background: color-mix(in oklab, var(--card) 85%, var(--bg));
+      user-select:none;
+      cursor:pointer;
+      font-size:14px;
+      font-weight:600;
+    }
+
+    /* ボタンの“強調”を開始=赤寄り、終了=青寄り（色だけに依存しないよう開始/終了ラベルも併用） */
+    .startBox .stepBtn.primary{
+      border-color: color-mix(in oklab, #ef4444 45%, var(--line));
+      background: color-mix(in oklab, #ef4444 10%, var(--card));
+    }
+    .endBox .stepBtn.primary{
+      border-color: color-mix(in oklab, #3b82f6 45%, var(--line));
+      background: color-mix(in oklab, #3b82f6 10%, var(--card));
+    }
+
+    .qtyInput{
+      text-align:center;
+      font-size:18px;
+      padding:12px 10px;
+      border-radius:12px;
+      border:1px solid var(--line);
+      background: color-mix(in oklab, var(--card) 78%, var(--bg));
+      height:48px;
+    }
+
+    .usedBox{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      align-items:flex-end;
+    }
+    .usedLine{ font-size:12px; color:var(--muted); }
+    .usedVal{ font-size:16px; font-weight:700; }
+    .usedVal.negative{ color: var(--danger); }
+    .usedVal.missing{ color: var(--warn); }
+
+    @media (max-width: 980px){
+      .prodRow{ grid-template-columns: 1fr; }
+      .controls{ grid-template-columns: 1fr; }
+      .usedBox{ align-items:flex-start; }
+    }
   </style>
 </head>
 <body>
-  <h1>宴会アプリ（土台A：JSON1枚同期）</h1>
-
-  <div class="row">
-    <input id="email" type="email" placeholder="店舗共通メール" style="flex:1;min-width:240px" />
-    <input id="pw" type="password" placeholder="パスワード" style="min-width:180px" />
-    <button id="btnLogin">ログイン</button>
-    <button id="btnLogout" class="secondary">ログアウト</button>
-    <span class="pill" id="status">未ログイン</span>
+<header>
+  <div class="top">
+    <h1>宴会 見込み原価（開始/終了在庫）- Sample C改</h1>
+    <div class="topRight">
+      <button id="btnTheme" class="themeBtn" title="テーマ切替">☀️ <span class="mono" style="font-size:12px;">LIGHT</span></button>
+      <div class="pill"><span id="authState">未ログイン</span> <span class="mono" id="deviceId">—</span></div>
+    </div>
   </div>
+  <nav>
+    <button class="tab active" data-tab="banquet">宴会</button>
+    <button class="tab" data-tab="master">商品マスタ</button>
+    <button class="tab" data-tab="sync">同期/ログ</button>
+  </nav>
+</header>
 
-  <div class="row" style="margin-top:10px;">
-    <button id="btnLoad" class="secondary">最新を読み込み</button>
-    <button id="btnSave">保存（上書き）</button>
-    <button id="btnSeed" class="secondary">サンプルJSON</button>
-    <button id="btnResetLocal" class="warn">端末ローカルID再生成</button>
+<main>
+  <!-- BANQUET -->
+  <section id="tab-banquet" class="grid">
+    <div class="card">
+      <div class="row">
+        <div>
+          <label>店舗共通メール</label>
+          <input id="email" type="email" placeholder="例：store@example.com" />
+        </div>
+        <div>
+          <label>パスワード</label>
+          <input id="pw" type="password" placeholder="********" />
+        </div>
+      </div>
+      <div class="btnbar">
+        <button class="primary" id="btnLogin">ログイン</button>
+        <button class="ghost" id="btnLogout">ログアウト</button>
+        <button class="ghost" id="btnReloadAll">データ再読込</button>
+      </div>
+      <div class="small">※同一アカウントでログインしている複数iPad間で、マスタ/宴会が自動同期します（Realtime）。</div>
+    </div>
 
-    <label class="row" style="gap:6px;">
-      <input id="autoPull" type="checkbox" checked />
-      <span class="muted">他端末の更新を自動反映（Realtime）</span>
-    </label>
-  </div>
+    <div class="card">
+      <h2 style="margin:0 0 10px; font-size:15px;">宴会 入力（開始在庫 / 終了在庫 → 差分で見込み原価）</h2>
 
-  <div class="muted" style="margin-top:8px;">
-    A方式は「最後に保存した端末が勝つ（last-write-wins）」です。まず同期土台だけ作って、仕様が固まったら event 分割に拡張できます。
-  </div>
+      <div class="row">
+        <div>
+          <label>日付</label>
+          <input id="evDate" type="date" />
+        </div>
+        <div>
+          <label>人数</label>
+          <input id="evGuests" inputmode="numeric" placeholder="例：30" />
+        </div>
+        <div>
+          <label>飲み放題単価（円/人）</label>
+          <input id="evDrinkPrice" inputmode="numeric" placeholder="例：3000" />
+          <div class="small">見込み売上＝人数×単価</div>
+        </div>
+      </div>
 
-  <hr/>
+      <div class="row">
+        <div>
+          <label>飲み放題（基本90分 + 延長30分単位）</label>
+          <div class="row" style="margin:0;">
+            <div style="min-width:220px; flex:1;">
+              <input id="evExt" inputmode="numeric" placeholder="延長回数（0〜）例：1" />
+              <div class="small">延長回数 × 30分</div>
+            </div>
+            <div class="kpi" style="flex:1;">
+              <div class="t">合計時間</div>
+              <div class="v mono" id="evDuration">90分</div>
+            </div>
+          </div>
+        </div>
 
-  <div class="row">
-    <span class="pill">kind: <b>app_state</b></span>
-    <span class="pill">doc_key: <b>main</b></span>
-    <span class="pill">device_id: <b id="deviceId">—</b></span>
-    <span class="pill">updated_at: <b id="updatedAt">—</b></span>
-  </div>
+        <div>
+          <label>着席 / 立食</label>
+          <select id="evStyle">
+            <option value="seated">着席</option>
+            <option value="standing">立食</option>
+          </select>
+        </div>
 
-  <textarea id="json" spellcheck="false" placeholder="ここに状態JSONが入ります（保存で同期）"></textarea>
+        <div>
+          <label>バーカウンター担当者（1〜2名、カンマ区切り）</label>
+          <input id="evStaff" placeholder="例：山田, 佐藤" />
+        </div>
+      </div>
 
-  <div class="muted" style="margin-top:10px;">ログ/エラー</div>
-  <pre id="log">-</pre>
+      <div class="hr"></div>
 
-  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-  <script>
-    // ====== ここだけ自分の値に差し替え（Supabase Project Settings → API） ======
-    const SUPABASE_URL = "https://pftjjrluhdbovoaxnykn.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBmdGpqcmx1aGRib3ZvYXhueWtuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMzUzMTUsImV4cCI6MjA4NjcxMTMxNX0.qX-LpvYcbu589h96FdxJmUEqYto64wniBcuGXraJaoU";
-    // ======================================================================
+      <div class="kpiGrid">
+        <div class="kpi">
+          <div class="t">この宴会 見込み原価（差分入力分）</div>
+          <div class="v mono" id="kpiThisCost">¥0</div>
+          <div class="small" id="kpiMissingEnds">未入力 0</div>
+        </div>
 
-    const { createClient } = supabase;
-    const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        <div class="kpi">
+          <div class="t">見込み売上（人数×単価）</div>
+          <div class="v mono" id="kpiThisSales">—</div>
+          <div class="small" id="kpiSalesHint">人数と単価を入れると計算</div>
+        </div>
 
-    const KIND = "app_state";
-    const DOC_KEY = "main";
+        <div class="kpi">
+          <div class="t">見込み原価率（原価÷売上）</div>
+          <div class="v mono" id="kpiThisCostRate">—</div>
+          <div class="small" id="kpiThisStatus">状態：未確定</div>
+        </div>
 
-    const $ = (id) => document.getElementById(id);
+        <div class="kpi">
+          <div class="t">商品点数（使用数&gt;0）</div>
+          <div class="v mono" id="kpiThisItems">0</div>
+          <div class="small">使用数＝開始−終了</div>
+        </div>
+      </div>
 
-    function log(msg, obj){
-      const line = `[${new Date().toISOString()}] ${msg}` + (obj ? `\n${JSON.stringify(obj, null, 2)}` : "");
-      $("log").textContent = line + "\n\n" + $("log").textContent;
+      <div class="btnbar">
+        <button class="ghost" id="btnResetStart">開始を全て0</button>
+        <button class="ghost" id="btnClearEnd">終了を全て未入力</button>
+        <button class="primary" id="btnSaveEvent">宴会を保存（開始/終了を丸ごと保存）</button>
+        <button class="ghost" id="btnNewEvent">新規入力に戻す</button>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="small" style="margin-bottom:8px;">
+        「開始（赤系）」と「終了（青系）」を入力します（0.1 / 1.0の増減ボタン + 直接入力）。<br>
+        終了が未入力の商品は差分計算に入らず、宴会は未確定扱いになります。
+      </div>
+
+      <div id="products" class="list"></div>
+      <div id="noProducts" class="small">商品マスタが空です。「商品マスタ」タブで先に登録してください。</div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin:0 0 10px; font-size:15px;">宴会一覧（保存済み）＋累計</h2>
+
+      <div class="row">
+        <div>
+          <label>フィルタ（開始日）</label>
+          <input id="fFrom" type="date" />
+        </div>
+        <div>
+          <label>フィルタ（終了日）</label>
+          <input id="fTo" type="date" />
+        </div>
+        <div>
+          <label>操作</label>
+          <div class="btnbar" style="margin-top:0;">
+            <button class="ghost" id="btnClearFilter">フィルタ解除</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="kpiGrid" style="margin-top:10px;">
+        <div class="kpi">
+          <div class="t">累計 見込み原価（確定のみ）</div>
+          <div class="v mono" id="kpiSumCostComplete">¥0</div>
+          <div class="small">未入力が無い宴会のみ</div>
+        </div>
+        <div class="kpi">
+          <div class="t">累計 見込み売上（確定のみ）</div>
+          <div class="v mono" id="kpiSumSalesComplete">¥0</div>
+          <div class="small">人数×単価（未入力は除外）</div>
+        </div>
+        <div class="kpi">
+          <div class="t">累計 原価率（確定のみ）</div>
+          <div class="v mono" id="kpiSumCostRateComplete">—</div>
+          <div class="small">原価÷売上</div>
+        </div>
+        <div class="kpi">
+          <div class="t">累計 人数 / 平均（円/人）</div>
+          <div class="v mono" id="kpiSumGuests">0</div>
+          <div class="small mono" id="kpiAvgPerHead">—</div>
+        </div>
+      </div>
+
+      <div class="hr"></div>
+      <div id="events" class="list"></div>
+      <div id="noEvents" class="small">まだ宴会がありません。</div>
+    </div>
+  </section>
+
+  <!-- MASTER -->
+  <section id="tab-master" class="grid" style="display:none;">
+    <div class="card">
+      <h2 style="margin:0 0 10px; font-size:15px;">商品マスタ（端末間同期）</h2>
+
+      <div class="row">
+        <div>
+          <label>商品名</label>
+          <input id="mName" placeholder="例：生ビール / ハイボール用ウイスキー / ワイン赤" />
+        </div>
+        <div>
+          <label>単位（例：本/樽/缶）</label>
+          <input id="mUnit" placeholder="例：本" />
+        </div>
+        <div>
+          <label>仕入単価（円/1単位）</label>
+          <input id="mCost" inputmode="numeric" placeholder="例：4800" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>最低用意数（本）</label>
+          <input id="mMin" inputmode="decimal" placeholder="例：6（目安）" />
+          <div class="small">初心者が準備しやすい目安として使います</div>
+        </div>
+        <div>
+          <label>カテゴリ（任意）</label>
+          <input id="mCat" placeholder="例：BEER / WHISKY / WINE / SOFT" />
+        </div>
+        <div>
+          <label>備考（任意）</label>
+          <input id="mNote" placeholder="例：20L樽 / 700mlボトル" />
+        </div>
+      </div>
+
+      <div class="btnbar">
+        <button class="primary" id="btnAddMaster">マスタに追加</button>
+        <button class="ghost" id="btnSaveMaster">マスタを保存（同期）</button>
+      </div>
+
+      <div class="hr"></div>
+      <div class="small">※マスタの変更はSupabaseへ保存され、同一アカウントの他iPadへ自動同期されます（Realtime）。</div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin:0 0 10px; font-size:15px;">登録済みマスタ</h2>
+      <div id="masterList" class="list"></div>
+      <div id="noMaster" class="small">マスタが空です。</div>
+    </div>
+  </section>
+
+  <!-- SYNC/LOG -->
+  <section id="tab-sync" class="grid" style="display:none;">
+    <div class="card">
+      <h2 style="margin:0 0 10px; font-size:15px;">同期/ログ</h2>
+      <div class="row">
+        <div class="pill">Realtime: <b id="rtState">—</b></div>
+        <div class="pill">master updated_at: <b id="masterUpdated">—</b></div>
+        <div class="pill">events loaded: <b id="eventsCount">0</b></div>
+      </div>
+
+      <div class="btnbar">
+        <button class="ghost" id="btnRegenDevice">端末ID再生成</button>
+        <button class="ghost" id="btnDump">現在の内部データをログに出す</button>
+      </div>
+
+      <div class="hr"></div>
+      <div class="small">ログ</div>
+      <pre id="log" class="mono" style="white-space:pre-wrap; background:var(--input-bg); border:1px solid var(--line); padding:12px; border-radius:14px; margin:0;">-</pre>
+    </div>
+  </section>
+</main>
+
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script>
+(() => {
+  // =======================
+  // ここだけ差し替え
+  // =======================
+  const SUPABASE_URL = "https://pftjjrluhdbovoaxnykn.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBmdGpqcmx1aGRib3ZvYXhueWtuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMzUzMTUsImV4cCI6MjA4NjcxMTMxNX0.qX-LpvYcbu589h96FdxJmUEqYto64wniBcuGXraJaoU";
+  // =======================
+
+  const { createClient } = supabase;
+  const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const $ = (id) => document.getElementById(id);
+
+  // theme
+  const THEME_KEY = "banquet_theme";
+  function applyTheme(theme){
+    document.documentElement.dataset.theme = theme;
+    const btn = $("btnTheme");
+    if(btn){
+      btn.innerHTML = theme === "dark"
+        ? `🌙 <span class="mono" style="font-size:12px;">DARK</span>`
+        : `☀️ <span class="mono" style="font-size:12px;">LIGHT</span>`;
     }
-    function setStatus(s){ $("status").textContent = s; }
+    localStorage.setItem(THEME_KEY, theme);
+  }
+  applyTheme(localStorage.getItem(THEME_KEY) || "light");
+  $("btnTheme").addEventListener("click", () => {
+    const now = document.documentElement.dataset.theme || "light";
+    applyTheme(now === "dark" ? "light" : "dark");
+  });
 
-    // 端末識別（payloadに残す用）
-    const DID_KEY = "banquet_device_id";
-    function getOrCreateDeviceId(){
-      let did = localStorage.getItem(DID_KEY);
-      if(!did){
-        did = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()));
-        localStorage.setItem(DID_KEY, did);
-      }
-      return did;
+  // device id
+  const DID_KEY = "banquet_device_id";
+  function getOrCreateDeviceId(){
+    let did = localStorage.getItem(DID_KEY);
+    if(!did){
+      did = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()));
+      localStorage.setItem(DID_KEY, did);
     }
-    function setDeviceIdUI(){
-      $("deviceId").textContent = getOrCreateDeviceId();
-    }
-    setDeviceIdUI();
+    return did;
+  }
+  $("deviceId").textContent = getOrCreateDeviceId();
 
-    function safeParseJSON(text){
-      try { return { ok:true, val: JSON.parse(text) }; }
-      catch(e){ return { ok:false, err: e }; }
-    }
+  // tabs
+  document.querySelectorAll(".tab").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".tab").forEach(x => x.classList.remove("active"));
+      btn.classList.add("active");
+      const tab = btn.dataset.tab;
+      ["banquet","master","sync"].forEach(k => {
+        $("tab-"+k).style.display = (k === tab) ? "" : "none";
+      });
+      if(tab === "master") renderMaster();
+      if(tab === "banquet") { renderProducts(); renderEvents(); }
+    });
+  });
 
-    async function getUser(){
-      const { data, error } = await sb.auth.getUser();
-      if(error) log("auth.getUser error", error);
-      return data?.user || null;
-    }
+  // state
+  let master = { version:1, items:[], lastSavedAt:null, lastSavedBy:null };
+  let masterRowUpdatedAt = null;
 
-    // app_state 行を必ず1つ用意
-    async function ensureRow(){
-      const user = await getUser();
-      if(!user) return null;
+  // draft maps (10x for 0.1 precision)
+  let editingEventId = null;
+  let start10 = {}; // itemId -> int
+  let end10 = {};   // itemId -> int | null (null=未入力)
+  let events = [];
 
-      const { data, error } = await sb
-        .from("docs")
-        .select("id, kind, doc_key, payload, updated_at")
-        .eq("kind", KIND)
-        .eq("doc_key", DOC_KEY)
-        .limit(1)
-        .maybeSingle();
+  function log(msg, obj){
+    const line = `[${new Date().toISOString()}] ${msg}` + (obj ? `\n${JSON.stringify(obj,null,2)}` : "");
+    $("log").textContent = line + "\n\n" + $("log").textContent;
+  }
 
-      if(error) throw error;
+  function yen(n){
+    const v = Math.round((n || 0));
+    return "¥" + v.toLocaleString("ja-JP");
+  }
+  function pct(n){
+    if(!Number.isFinite(n)) return "—";
+    return (n*100).toFixed(1) + "%";
+  }
+  function todayISO(){
+    const d = new Date();
+    const z = new Date(d.getTime() - d.getTimezoneOffset()*60000);
+    return z.toISOString().slice(0,10);
+  }
+  function parseIntSafe(v){
+    const s = String(v ?? "").replace(/,/g,"").trim();
+    if(!s) return null;
+    const n = Number(s);
+    return Number.isFinite(n) ? Math.trunc(n) : null;
+  }
+  function parseNumberSafe(v){
+    const s = String(v ?? "").replace(/,/g,"").trim();
+    if(s === "") return null;
+    const n = Number(s);
+    return Number.isFinite(n) ? n : null;
+  }
+  function to10(x){ return Math.round(Number(x||0) * 10); }
 
-      if(!data){
-        const deviceId = getOrCreateDeviceId();
-        const seed = {
-          version: 1,
-          note: "A方式: JSON1枚の同期。payloadは自由に変えてOK。",
-          createdAt: new Date().toISOString(),
-          lastSavedAt: null,
-          lastSavedBy: deviceId,
-          master: { items: [] },
-          draft: {},
-          history: []
-        };
+  async function getUser(){
+    const { data, error } = await sb.auth.getUser();
+    if(error) log("auth.getUser error", error);
+    return data?.user || null;
+  }
+  async function refreshAuthState(){
+    const u = await getUser();
+    $("authState").textContent = u ? `ログイン中: ${u.email || "(no email)"}` : "未ログイン";
+    return u;
+  }
 
-        const ins = await sb
-          .from("docs")
-          .insert({ kind: KIND, doc_key: DOC_KEY, payload: seed })
-          .select("id, kind, doc_key, payload, updated_at")
-          .single();
+  async function ensureMasterRow(){
+    const u = await getUser();
+    if(!u) throw new Error("not logged in");
 
-        if(ins.error) throw ins.error;
-        return ins.data;
-      }
+    const { data, error } = await sb
+      .from("docs")
+      .select("payload, updated_at")
+      .eq("kind", "master")
+      .eq("doc_key", "main")
+      .limit(1)
+      .maybeSingle();
 
-      return data;
-    }
+    if(error) throw error;
 
-    async function loadLatest(){
-      const user = await getUser();
-      if(!user){
-        setStatus("未ログイン");
-        $("updatedAt").textContent = "—";
-        $("json").value = "";
-        return;
-      }
-      setStatus("ログイン中: " + (user.email || "(no email)"));
-
-      try{
-        const row = await ensureRow();
-        $("updatedAt").textContent = row.updated_at || "—";
-        $("json").value = JSON.stringify(row.payload ?? {}, null, 2);
-        log("loaded latest", { updated_at: row.updated_at, id: row.id });
-      }catch(e){
-        log("loadLatest error", e);
-        alert("読み込みエラー: " + (e.message || e));
-      }
-    }
-
-    async function saveOverwrite(){
-      const user = await getUser();
-      if(!user) return alert("先にログインして");
-
-      const parsed = safeParseJSON($("json").value);
-      if(!parsed.ok) return alert("JSONが壊れてる: " + parsed.err.message);
-
-      const deviceId = getOrCreateDeviceId();
-      const payload = parsed.val;
-      payload.lastSavedAt = new Date().toISOString();
-      payload.lastSavedBy = deviceId;
-
-      try{
-        const { data, error } = await sb
-          .from("docs")
-          .upsert(
-            { kind: KIND, doc_key: DOC_KEY, payload },
-            { onConflict: "user_id,kind,doc_key" }
-          )
-          .select("id, updated_at")
-          .single();
-
-        if(error) throw error;
-
-        $("updatedAt").textContent = data.updated_at || "—";
-        log("saved overwrite", data);
-        alert("保存した（上書き）");
-      }catch(e){
-        log("saveOverwrite error", e);
-        alert("保存エラー: " + (e.message || e));
-      }
-    }
-
-    // ---- UI handlers ----
-    $("btnLogin").onclick = async () => {
-      const email = $("email").value.trim();
-      const password = $("pw").value;
-      if(!email || !password) return alert("メールとパスワード入れて");
-
-      const { error } = await sb.auth.signInWithPassword({ email, password });
-      if(error){
-        log("login failed", error);
-        return alert("ログイン失敗: " + error.message);
-      }
-      log("login ok");
-      await loadLatest();
-    };
-
-    $("btnLogout").onclick = async () => {
-      await sb.auth.signOut();
-      log("logout");
-      await loadLatest();
-    };
-
-    $("btnLoad").onclick = loadLatest;
-    $("btnSave").onclick = saveOverwrite;
-
-    $("btnSeed").onclick = () => {
-      const sample = {
+    if(!data){
+      const seed = {
         version: 1,
-        note: "ここは自由。UI/商品が決まるまで仮置き。",
-        master: { items: [] },
-        draft: { event: null },
-        history: [],
-        settings: { decimals: 1 }
+        items: [],
+        lastSavedAt: null,
+        lastSavedBy: getOrCreateDeviceId(),
       };
-      $("json").value = JSON.stringify(sample, null, 2);
-      log("seeded sample json");
-    };
 
-    $("btnResetLocal").onclick = () => {
-      if(!confirm("この端末のdevice_idを再生成しますか？（同期データ自体は消えません）")) return;
-      localStorage.removeItem(DID_KEY);
-      setDeviceIdUI();
-      log("device_id regenerated", { deviceId: getOrCreateDeviceId() });
-    };
+      const ins = await sb
+        .from("docs")
+        .insert({
+          user_id: u.id,
+          kind: "master",
+          doc_key: "main",
+          payload: seed
+        })
+        .select("payload, updated_at")
+        .single();
 
-    // ---- Realtime（他端末の更新を自動反映）----
-    // ※SQLの publication 追加 or DashboardでdocsをRealtime対象にしてないと反応しません
-    const ch = sb.channel("app-state-sync");
-    ch.on("postgres_changes", {
-      event: "*",
-      schema: "public",
-      table: "docs"
-    }, async (payload) => {
-      if(!$("autoPull").checked) return;
+      if(ins.error) throw ins.error;
+      return ins.data;
+    }
+    return data;
+  }
 
-      const newRow = payload.new;
-      if(!newRow) return;
+  function initDraftMaps(){
+    const s = {};
+    const e = {};
+    (master.items || []).forEach(it => {
+      s[it.id] = s[it.id] ?? 0;
+      e[it.id] = (e[it.id] === undefined) ? null : e[it.id];
+    });
+    start10 = { ...s, ...start10 };
+    end10 = { ...e, ...end10 };
+  }
 
-      // kind/doc_key が対象のときだけpull
-      if(newRow.kind === KIND && newRow.doc_key === DOC_KEY){
-        log("realtime change detected", { updated_at: newRow.updated_at });
-        await loadLatest();
+  async function loadMaster(){
+    const u = await refreshAuthState();
+    if(!u) return;
+
+    const row = await ensureMasterRow();
+    master = row.payload || { version:1, items:[] };
+    masterRowUpdatedAt = row.updated_at || null;
+
+    $("masterUpdated").textContent = masterRowUpdatedAt || "—";
+    log("master loaded", { items: master.items?.length || 0, updated_at: masterRowUpdatedAt });
+
+    initDraftMaps();
+    renderMaster();
+    renderProducts();
+    recalcDraftKpi();
+  }
+
+  async function saveMaster(){
+    const u = await getUser();
+    if(!u) return alert("先にログインして");
+
+    master.lastSavedAt = new Date().toISOString();
+    master.lastSavedBy = getOrCreateDeviceId();
+
+    const { data, error } = await sb
+      .from("docs")
+      .upsert({
+        user_id: u.id,
+        kind: "master",
+        doc_key: "main",
+        payload: master
+      }, { onConflict: "user_id,kind,doc_key" })
+      .select("updated_at")
+      .single();
+
+    if(error){
+      log("saveMaster error", error);
+      return alert("マスタ保存エラー: " + error.message);
+    }
+    masterRowUpdatedAt = data.updated_at || null;
+    $("masterUpdated").textContent = masterRowUpdatedAt || "—";
+    log("master saved", { updated_at: masterRowUpdatedAt });
+    alert("マスタを保存して同期しました");
+  }
+
+  async function loadEvents(){
+    const u = await refreshAuthState();
+    if(!u) return;
+
+    const { data, error } = await sb
+      .from("docs")
+      .select("doc_key, payload, created_at, updated_at")
+      .eq("kind", "event")
+      .order("created_at", { ascending: false })
+      .limit(400);
+
+    if(error){
+      log("loadEvents error", error);
+      return alert("宴会読み込みエラー: " + error.message);
+    }
+    events = data || [];
+    $("eventsCount").textContent = String(events.length);
+    renderEvents();
+    log("events loaded", { count: events.length });
+  }
+
+  function updateDurationUI(){
+    const ext = Math.max(0, parseIntSafe($("evExt").value) || 0);
+    const min = 90 + 30 * ext;
+    $("evDuration").textContent = `${min}分`;
+  }
+
+  function getDraftSalesYen(){
+    const guests = parseIntSafe($("evGuests").value);
+    const per = parseIntSafe($("evDrinkPrice").value);
+    if(!guests || guests <= 0) return null;
+    if(!per || per <= 0) return null;
+    return guests * per;
+  }
+
+  function calcDraft(){
+    let total = 0;
+    let usedItemCount = 0;
+    let missingEnds = 0;
+    let negativeCount = 0;
+
+    for(const it of (master.items || [])){
+      const s10 = start10[it.id] || 0;
+      const e10 = end10[it.id];
+
+      if(s10 > 0 && (e10 === null || e10 === undefined)){
+        missingEnds++;
       }
-    }).subscribe((status) => {
-      log("realtime subscribe", { status });
+      if(e10 === null || e10 === undefined) continue;
+
+      const used10 = s10 - e10;
+      if(used10 < 0) negativeCount++;
+
+      const used = used10 / 10;
+      if(used > 0){
+        usedItemCount++;
+        total += used * Number(it.costYen || 0);
+      }
+    }
+    return { total, usedItemCount, missingEnds, negativeCount };
+  }
+
+  function recalcDraftKpi(){
+    const { total, usedItemCount, missingEnds, negativeCount } = calcDraft();
+    const sales = getDraftSalesYen();
+
+    $("kpiThisCost").textContent = yen(total);
+    $("kpiThisItems").textContent = String(usedItemCount);
+    $("kpiMissingEnds").textContent = `未入力 ${missingEnds}` + (negativeCount ? ` / 増加疑い ${negativeCount}` : "");
+
+    if(sales !== null){
+      $("kpiThisSales").textContent = yen(sales);
+      const rate = (sales > 0) ? (total / sales) : NaN;
+      $("kpiThisCostRate").textContent = pct(rate);
+      $("kpiSalesHint").textContent = "—";
+    }else{
+      $("kpiThisSales").textContent = "—";
+      $("kpiThisCostRate").textContent = "—";
+      $("kpiSalesHint").textContent = "人数と単価を入れると計算";
+    }
+
+    const status = (missingEnds === 0) ? "状態：確定" : "状態：未確定（終了未入力あり）";
+    $("kpiThisStatus").textContent = status;
+  }
+
+  function buildEventPayload(){
+    const date = $("evDate").value || todayISO();
+    const guests = parseIntSafe($("evGuests").value);
+    const drinkPricePerHeadYen = parseIntSafe($("evDrinkPrice").value);
+    const salesYen = (guests && drinkPricePerHeadYen) ? (guests * drinkPricePerHeadYen) : null;
+
+    const ext = Math.max(0, parseIntSafe($("evExt").value) || 0);
+    const durationMin = 90 + 30 * ext;
+
+    const style = $("evStyle").value;
+    const staff = ($("evStaff").value || "")
+      .split(",")
+      .map(s => s.trim())
+      .filter(Boolean)
+      .slice(0, 2);
+
+    const items = [];
+    let totalCostYen = 0;
+    let missingEnds = 0;
+    let negativeCount = 0;
+
+    for(const it of (master.items || [])){
+      const s10 = start10[it.id] || 0;
+      const e10 = end10[it.id];
+
+      const hasStart = s10 !== 0;
+      const hasEnd = !(e10 === null || e10 === undefined);
+
+      if(!hasStart && !hasEnd) continue;
+
+      let used10 = null;
+      let costItemYen = 0;
+
+      if(!hasEnd){
+        missingEnds++;
+      }else{
+        used10 = s10 - e10;
+        if(used10 < 0) negativeCount++;
+        const used = used10 / 10;
+        if(used > 0){
+          costItemYen = Math.round(used * Number(it.costYen || 0));
+          totalCostYen += costItemYen;
+        }
+      }
+
+      items.push({
+        itemId: it.id,
+        startQty: Number((s10/10).toFixed(1)),
+        endQty: hasEnd ? Number((e10/10).toFixed(1)) : null,
+        usedQty: (used10 === null) ? null : Number((used10/10).toFixed(1)),
+        costItemYen
+      });
+    }
+
+    const isComplete = (missingEnds === 0);
+    const costRate = (salesYen && salesYen > 0) ? (totalCostYen / salesYen) : null;
+
+    return {
+      version: 2,
+      date,
+      guests: guests ?? null,
+      drinkPricePerHeadYen: drinkPricePerHeadYen ?? null,
+      salesYen,
+      costRate, // 0.28 みたいな値（表示は%）
+      drinkBaseMin: 90,
+      extensionCount: ext,
+      durationMin,
+      style,
+      staff,
+      items,
+      totalCostYen: Math.round(totalCostYen),
+      missingEnds,
+      negativeCount,
+      isComplete,
+      savedAt: new Date().toISOString(),
+      savedBy: getOrCreateDeviceId()
+    };
+  }
+
+  function resetDraft(){
+    editingEventId = null;
+    $("evDate").value = todayISO();
+    $("evGuests").value = "";
+    $("evDrinkPrice").value = "";
+    $("evExt").value = "0";
+    $("evStyle").value = "seated";
+    $("evStaff").value = "";
+
+    (master.items || []).forEach(it => {
+      start10[it.id] = 0;
+      end10[it.id] = null;
     });
 
-    sb.auth.onAuthStateChange((_event, _session) => loadLatest());
+    updateDurationUI();
+    renderProducts();
+    recalcDraftKpi();
+  }
 
-    // 初回
-    loadLatest();
-  </script>
+  async function saveEvent(){
+    const u = await getUser();
+    if(!u) return alert("先にログインして");
+    if(!master.items?.length) return alert("商品マスタが空です。先に登録してください。");
+
+    const payload = buildEventPayload();
+    if(!payload.items.length){
+      if(!confirm("開始/終了が1件も入力されていません。このまま保存しますか？")) return;
+    }
+
+    const id = editingEventId || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()));
+    const { error } = await sb
+      .from("docs")
+      .upsert({
+        user_id: u.id,
+        kind: "event",
+        doc_key: id,
+        payload
+      }, { onConflict: "user_id,kind,doc_key" });
+
+    if(error){
+      log("saveEvent error", error);
+      return alert("宴会保存エラー: " + error.message);
+    }
+
+    log("event saved", { id, totalCostYen: payload.totalCostYen, salesYen: payload.salesYen, missingEnds: payload.missingEnds });
+    alert("宴会を保存しました");
+    resetDraft();
+    await loadEvents();
+  }
+
+  async function deleteEvent(docKey){
+    if(!confirm("この宴会を削除しますか？")) return;
+    const { error } = await sb
+      .from("docs")
+      .delete()
+      .eq("kind", "event")
+      .eq("doc_key", docKey);
+
+    if(error){
+      log("deleteEvent error", error);
+      return alert("削除エラー: " + error.message);
+    }
+    log("event deleted", { docKey });
+    await loadEvents();
+  }
+
+  function loadEventToDraft(docKey){
+    const row = events.find(e => e.doc_key === docKey);
+    if(!row) return;
+
+    const p = row.payload || {};
+    editingEventId = docKey;
+
+    $("evDate").value = p.date || todayISO();
+    $("evGuests").value = (p.guests ?? "") === null ? "" : String(p.guests ?? "");
+    $("evDrinkPrice").value = (p.drinkPricePerHeadYen ?? "") === null ? "" : String(p.drinkPricePerHeadYen ?? "");
+    $("evExt").value = String(p.extensionCount ?? 0);
+    $("evStyle").value = p.style || "seated";
+    $("evStaff").value = (p.staff || []).join(", ");
+
+    (master.items || []).forEach(it => { start10[it.id] = 0; end10[it.id] = null; });
+    (p.items || []).forEach(x => {
+      start10[x.itemId] = to10(x.startQty || 0);
+      end10[x.itemId]   = (x.endQty === null || x.endQty === undefined) ? null : to10(x.endQty || 0);
+    });
+
+    updateDurationUI();
+    renderProducts();
+    recalcDraftKpi();
+    alert("宴会を読み込みました（保存で上書き更新）");
+  }
+
+  function escapeHtml(s){
+    return String(s ?? "").replace(/[&<>"']/g, m => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+    }[m]));
+  }
+
+  // master render
+  function renderMaster(){
+    const box = $("masterList");
+    box.innerHTML = "";
+    const items = master.items || [];
+    $("noMaster").style.display = items.length ? "none" : "";
+
+    items.forEach((it) => {
+      const minQty = (it.minQty === null || it.minQty === undefined) ? null : Number(it.minQty);
+      const minText = (minQty !== null && Number.isFinite(minQty) && minQty > 0) ? `${minQty.toFixed(1)}${escapeHtml(it.unit || "本")}` : "—";
+
+      const el = document.createElement("div");
+      el.className = "item";
+      el.innerHTML = `
+        <div class="itemHeader">
+          <div>
+            <h3>${escapeHtml(it.name)}</h3>
+            <div class="small">${escapeHtml(it.category || "")}${it.category ? " / " : ""}${escapeHtml(it.note || "")}</div>
+            <div class="small">
+              単位：${escapeHtml(it.unit || "本")} / 単価：<span class="mono">${yen(Number(it.costYen||0))}</span>
+              / 最低用意：<span class="mono">${minText}</span>
+            </div>
+          </div>
+          <div><span class="badge">ID: ${escapeHtml(it.id)}</span></div>
+        </div>
+        <div class="btnbar">
+          <button data-act="edit">編集</button>
+          <button class="danger" data-act="del">削除</button>
+        </div>
+      `;
+      el.querySelector('[data-act="del"]').addEventListener("click", () => {
+        if(!confirm(`「${it.name}」をマスタから削除しますか？`)) return;
+        master.items = master.items.filter(x => x.id !== it.id);
+        delete start10[it.id];
+        delete end10[it.id];
+        renderMaster();
+        renderProducts();
+        recalcDraftKpi();
+      });
+      el.querySelector('[data-act="edit"]').addEventListener("click", () => {
+        const name = prompt("商品名", it.name);
+        if(name === null) return;
+        const unit = prompt("単位（例：本/樽/缶）", it.unit || "本");
+        if(unit === null) return;
+        const cost = prompt("仕入単価（円/1単位）", String(it.costYen ?? ""));
+        if(cost === null) return;
+
+        const costYen = parseNumberSafe(cost);
+        if(costYen === null || costYen < 0) return alert("単価が不正です");
+
+        const min = prompt("最低用意数（本）※0.1刻みOK、空欄で未設定", (it.minQty ?? "") === null ? "" : String(it.minQty ?? ""));
+        if(min === null) return;
+        let minQty = null;
+        if(String(min).trim() !== ""){
+          const n = parseNumberSafe(min);
+          if(n === null || n < 0) return alert("最低用意数が不正です");
+          minQty = Number(n.toFixed(1));
+        }
+
+        it.name = name.trim() || it.name;
+        it.unit = (unit.trim() || "本");
+        it.costYen = costYen;
+        it.minQty = minQty;
+
+        it.category = prompt("カテゴリ（任意）", it.category || "")?.trim() ?? it.category;
+        it.note = prompt("備考（任意）", it.note || "")?.trim() ?? it.note;
+
+        renderMaster();
+        renderProducts();
+        recalcDraftKpi();
+      });
+      box.appendChild(el);
+    });
+  }
+
+  function calcItemCost(itemId){
+    const it = (master.items || []).find(x => x.id === itemId);
+    if(!it) return 0;
+    const s = start10[itemId] || 0;
+    const e = end10[itemId];
+    if(e === null || e === undefined) return 0;
+    const used = (s - e) / 10;
+    if(used <= 0) return 0;
+    return Math.round(used * Number(it.costYen || 0));
+  }
+
+  // product render (start/end)
+  function renderProducts(){
+    const box = $("products");
+    box.innerHTML = "";
+    const items = master.items || [];
+    $("noProducts").style.display = items.length ? "none" : "";
+
+    items.forEach(it => {
+      if(start10[it.id] === undefined) start10[it.id] = 0;
+      if(end10[it.id] === undefined) end10[it.id] = null;
+
+      const s10 = start10[it.id] || 0;
+      const e10 = end10[it.id];
+      const used10 = (e10 === null || e10 === undefined) ? null : (s10 - e10);
+
+      const usedText = (used10 === null) ? "未入力" : (used10/10).toFixed(1);
+      const usedClass = (used10 === null) ? "missing" : (used10 < 0 ? "negative" : "");
+
+      const minQty = (it.minQty === null || it.minQty === undefined) ? null : Number(it.minQty);
+      const min10 = (minQty !== null && Number.isFinite(minQty)) ? to10(minQty) : null;
+      const shortage = (min10 !== null && min10 > 0) ? (s10 < min10) : false;
+
+      const shortageBadge = shortage
+        ? `<span class="badge warn" title="開始在庫が最低用意数より少ない">⚠ 不足</span>`
+        : (min10 !== null && min10 > 0 ? `<span class="badge">目安OK</span>` : `<span class="badge">目安なし</span>`);
+
+      const metaMin = (min10 !== null && min10 > 0)
+        ? `最低用意 ${minQty.toFixed(1)}${escapeHtml(it.unit||"本")}`
+        : `最低用意 —`;
+
+      const row = document.createElement("div");
+      row.className = "prodRow";
+      row.innerHTML = `
+        <div>
+          <div class="prodName">${escapeHtml(it.name)}</div>
+          <div class="prodMeta">
+            ${escapeHtml(metaMin)} / 単価 ${yen(Number(it.costYen||0))} / 単位 ${escapeHtml(it.unit||"本")} / ${escapeHtml(it.category||"-")}
+            &nbsp; ${shortageBadge}
+          </div>
+        </div>
+
+        <div class="controls" data-itemid="${escapeHtml(it.id)}">
+          <div class="ctrlBox startBox">
+            <div class="ctrlTitle"><span>開始（赤）</span><span class="mono">${(s10/10).toFixed(1)}</span></div>
+            <div class="ctrlGrid">
+              <div class="stepBtn" data-field="start" data-step="-10">−1</div>
+              <div class="stepBtn" data-field="start" data-step="-1">−0.1</div>
+              <input class="qtyInput" data-field="startInput" inputmode="decimal" placeholder="0.0" value="${(s10/10).toFixed(1)}" />
+              <div class="stepBtn primary" data-field="start" data-step="1">+0.1</div>
+              <div class="stepBtn primary" data-field="start" data-step="10">+1</div>
+            </div>
+          </div>
+
+          <div class="ctrlBox endBox">
+            <div class="ctrlTitle"><span>終了（青）</span><span class="mono">${(e10 === null || e10 === undefined) ? "—" : (e10/10).toFixed(1)}</span></div>
+            <div class="ctrlGrid">
+              <div class="stepBtn" data-field="end" data-step="-10">−1</div>
+              <div class="stepBtn" data-field="end" data-step="-1">−0.1</div>
+              <input class="qtyInput" data-field="endInput" inputmode="decimal" placeholder="—" value="${(e10 === null || e10 === undefined) ? "" : (e10/10).toFixed(1)}" />
+              <div class="stepBtn primary" data-field="end" data-step="1">+0.1</div>
+              <div class="stepBtn primary" data-field="end" data-step="10">+1</div>
+            </div>
+          </div>
+
+          <div class="usedBox">
+            <div class="usedLine">使用（開始−終了）</div>
+            <div class="usedVal ${usedClass} mono">${usedText}</div>
+            <div class="usedLine">原価：<span class="mono">${yen(calcItemCost(it.id))}</span></div>
+          </div>
+        </div>
+      `;
+      box.appendChild(row);
+    });
+
+    // event delegation（ボタン/入力）
+    box.onclick = (ev) => {
+      const btn = ev.target.closest(".stepBtn");
+      if(!btn) return;
+
+      const ctrl = btn.closest(".controls");
+      if(!ctrl) return;
+
+      const itemId = ctrl.getAttribute("data-itemid");
+      const step = parseInt(btn.getAttribute("data-step"), 10) || 0;
+      const field = btn.getAttribute("data-field");
+
+      if(field === "start"){
+        const now = start10[itemId] || 0;
+        start10[itemId] = Math.max(0, now + step);
+      }else if(field === "end"){
+        const now = (end10[itemId] === null || end10[itemId] === undefined) ? 0 : (end10[itemId] || 0);
+        end10[itemId] = Math.max(0, now + step);
+      }
+      renderProducts();
+      recalcDraftKpi();
+    };
+
+    box.onchange = (ev) => {
+      const inp = ev.target.closest(".qtyInput");
+      if(!inp) return;
+
+      const ctrl = inp.closest(".controls");
+      const itemId = ctrl.getAttribute("data-itemid");
+      const f = inp.getAttribute("data-field");
+      const val = (inp.value || "").trim();
+
+      if(f === "startInput"){
+        const n = parseNumberSafe(val);
+        start10[itemId] = Math.max(0, to10(n || 0));
+      }else if(f === "endInput"){
+        if(val === ""){
+          end10[itemId] = null; // 未入力
+        }else{
+          const n = parseNumberSafe(val);
+          end10[itemId] = Math.max(0, to10(n || 0));
+        }
+      }
+      renderProducts();
+      recalcDraftKpi();
+    };
+  }
+
+  // events list + cumulative
+  function renderEvents(){
+    const box = $("events");
+    box.innerHTML = "";
+
+    const from = $("fFrom").value || null;
+    const to = $("fTo").value || null;
+
+    const filtered = (events || []).filter(e => {
+      const d = e.payload?.date;
+      if(!d) return true;
+      if(from && d < from) return false;
+      if(to && d > to) return false;
+      return true;
+    });
+
+    $("noEvents").style.display = filtered.length ? "none" : "";
+
+    let sumCostComplete = 0;
+    let sumSalesComplete = 0;
+    let sumGuests = 0;
+    let sumCostAll = 0;
+    let sumSalesAll = 0;
+
+    filtered.forEach(e => {
+      const p = e.payload || {};
+      const date = p.date || "-";
+      const guests = p.guests ?? null;
+
+      const cost = Number(p.totalCostYen ?? 0);
+      const sales = (p.salesYen === null || p.salesYen === undefined) ? null : Number(p.salesYen);
+      const missingEnds = Number(p.missingEnds ?? 0);
+      const isComplete = !!p.isComplete;
+
+      sumCostAll += cost;
+      if(sales !== null) sumSalesAll += sales;
+
+      if(isComplete){
+        sumCostComplete += cost;
+        if(sales !== null) sumSalesComplete += sales;
+        if(guests && guests > 0) sumGuests += guests;
+      }
+
+      const duration = p.durationMin ? `${p.durationMin}分` : "—";
+      const style = p.style === "standing" ? "立食" : "着席";
+      const staff = (p.staff || []).join(" / ") || "—";
+
+      const perHeadPrice = (p.drinkPricePerHeadYen ?? null);
+      const perHeadText = (perHeadPrice && Number(perHeadPrice) > 0) ? yen(perHeadPrice) : "—";
+
+      const rate = (sales && sales > 0) ? (cost / sales) : null;
+
+      const badge = isComplete
+        ? `<span class="badge">確定</span>`
+        : `<span class="badge warn">未確定（未入力${missingEnds}）</span>`;
+
+      const title = `${date}　${guests ? guests + "名" : "人数—"}　${badge}`;
+
+      const el = document.createElement("div");
+      el.className = "item";
+      el.innerHTML = `
+        <div class="itemHeader">
+          <div>
+            <h3>${title}</h3>
+            <div class="small">単価：<span class="mono">${escapeHtml(perHeadText)}</span> / 時間：${escapeHtml(duration)} / 形態：${escapeHtml(style)} / 担当：${escapeHtml(staff)}</div>
+            <div class="small">
+              売上：<span class="mono">${sales === null ? "—" : yen(sales)}</span>
+              / 原価：<span class="mono">${yen(cost)}</span>
+              / 原価率：<span class="mono">${rate === null ? "—" : pct(rate)}</span>
+            </div>
+          </div>
+          <div><span class="badge">updated: ${escapeHtml(e.updated_at || "-")}</span></div>
+        </div>
+        <div class="btnbar">
+          <button data-act="edit">編集</button>
+          <button class="danger" data-act="del">削除</button>
+        </div>
+      `;
+
+      el.querySelector('[data-act="edit"]').addEventListener("click", () => loadEventToDraft(e.doc_key));
+      el.querySelector('[data-act="del"]').addEventListener("click", () => deleteEvent(e.doc_key));
+      box.appendChild(el);
+    });
+
+    $("kpiSumCostComplete").textContent = yen(sumCostComplete);
+    $("kpiSumSalesComplete").textContent = yen(sumSalesComplete);
+    $("kpiSumCostRateComplete").textContent = (sumSalesComplete > 0) ? pct(sumCostComplete / sumSalesComplete) : "—";
+    $("kpiSumGuests").textContent = String(sumGuests);
+    $("kpiAvgPerHead").textContent = (sumGuests > 0) ? `平均（原価/人） ${yen(sumCostComplete / sumGuests)}` : "—";
+  }
+
+  // UI handlers
+  $("btnLogin").addEventListener("click", async () => {
+    const email = ($("email").value || "").trim();
+    const password = $("pw").value || "";
+    if(!email || !password) return alert("メールとパスワードを入力して");
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    if(error){
+      log("login failed", error);
+      return alert("ログイン失敗: " + error.message);
+    }
+    log("login ok");
+    await reloadAll();
+  });
+
+  $("btnLogout").addEventListener("click", async () => {
+    await sb.auth.signOut();
+    log("logout");
+    await refreshAuthState();
+  });
+
+  $("btnReloadAll").addEventListener("click", () => reloadAll());
+
+  $("evGuests").addEventListener("input", recalcDraftKpi);
+  $("evDrinkPrice").addEventListener("input", recalcDraftKpi);
+  $("evExt").addEventListener("input", () => { updateDurationUI(); recalcDraftKpi(); });
+
+  $("btnResetStart").addEventListener("click", () => {
+    if(!confirm("開始をすべて0にしますか？")) return;
+    (master.items || []).forEach(it => start10[it.id] = 0);
+    renderProducts(); recalcDraftKpi();
+  });
+
+  $("btnClearEnd").addEventListener("click", () => {
+    if(!confirm("終了をすべて未入力に戻しますか？")) return;
+    (master.items || []).forEach(it => end10[it.id] = null);
+    renderProducts(); recalcDraftKpi();
+  });
+
+  $("btnSaveEvent").addEventListener("click", saveEvent);
+
+  $("btnNewEvent").addEventListener("click", () => {
+    if(!confirm("編集中の内容を破棄して新規入力にしますか？")) return;
+    resetDraft();
+  });
+
+  $("btnClearFilter").addEventListener("click", () => {
+    $("fFrom").value = "";
+    $("fTo").value = "";
+    renderEvents();
+  });
+  $("fFrom").addEventListener("change", renderEvents);
+  $("fTo").addEventListener("change", renderEvents);
+
+  $("btnAddMaster").addEventListener("click", () => {
+    const name = ($("mName").value || "").trim();
+    const unit = ($("mUnit").value || "本").trim() || "本";
+    const costYen = parseNumberSafe($("mCost").value);
+    const minRaw = ($("mMin").value || "").trim();
+    const category = ($("mCat").value || "").trim();
+    const note = ($("mNote").value || "").trim();
+
+    if(!name) return alert("商品名を入力して");
+    if(costYen === null || costYen < 0) return alert("仕入単価（円）を入力して");
+
+    let minQty = null;
+    if(minRaw !== ""){
+      const n = parseNumberSafe(minRaw);
+      if(n === null || n < 0) return alert("最低用意数が不正です");
+      minQty = Number(n.toFixed(1));
+    }
+
+    const id = crypto.randomUUID ? crypto.randomUUID() : String(Date.now());
+    master.items = master.items || [];
+    master.items.unshift({ id, name, unit, costYen, minQty, category, note });
+
+    $("mName").value = "";
+    $("mUnit").value = "本";
+    $("mCost").value = "";
+    $("mMin").value = "";
+    $("mCat").value = "";
+    $("mNote").value = "";
+
+    start10[id] = 0;
+    end10[id] = null;
+
+    renderMaster();
+    renderProducts();
+    recalcDraftKpi();
+  });
+
+  $("btnSaveMaster").addEventListener("click", saveMaster);
+
+  $("btnRegenDevice").addEventListener("click", () => {
+    if(!confirm("端末IDを再生成しますか？")) return;
+    localStorage.removeItem(DID_KEY);
+    $("deviceId").textContent = getOrCreateDeviceId();
+    log("device id regenerated", { deviceId: getOrCreateDeviceId() });
+  });
+
+  $("btnDump").addEventListener("click", () => {
+    log("dump", { master, masterRowUpdatedAt, eventsCount: events.length, editingEventId, start10, end10 });
+  });
+
+  // realtime
+  let rtChannel = null;
+  function subscribeRealtime(){
+    if(rtChannel) return;
+
+    rtChannel = sb.channel("banquet-docs-sync");
+    rtChannel.on("postgres_changes", { event:"*", schema:"public", table:"docs" }, (payload) => {
+      const n = payload.new;
+      if(!n) return;
+
+      if(n.kind === "master" && n.doc_key === "main"){
+        log("realtime: master changed", { updated_at: n.updated_at });
+        loadMaster().catch(e => log("loadMaster failed", e));
+      }
+      if(n.kind === "event"){
+        log("realtime: event changed", { doc_key: n.doc_key, updated_at: n.updated_at });
+        loadEvents().catch(e => log("loadEvents failed", e));
+      }
+    }).subscribe((status) => {
+      $("rtState").textContent = status;
+      log("realtime subscribe", { status });
+    });
+  }
+
+  async function reloadAll(){
+    const u = await refreshAuthState();
+    if(!u) return;
+    subscribeRealtime();
+    await loadMaster();
+    await loadEvents();
+
+    if(!$("evDate").value) $("evDate").value = todayISO();
+    if($("evExt").value === "") $("evExt").value = "0";
+    updateDurationUI();
+    recalcDraftKpi();
+  }
+
+  // initial
+  $("evDate").value = todayISO();
+  $("evExt").value = "0";
+  updateDurationUI();
+  refreshAuthState();
+})();
+</script>
 </body>
 </html>
