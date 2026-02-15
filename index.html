@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="color-scheme" content="light dark">
-  <title>宴会 見込み原価（開始/終了在庫） - Sample E</title>
+  <title>宴会 見込み原価（開始/終了在庫） - Sample F</title>
 
   <style>
     :root{
@@ -101,6 +101,43 @@
       background: color-mix(in oklab, var(--accent) 6%, transparent);
     }
 
+    /* ★手順マニュアル（ヘッダー付近） */
+    .manualBar{
+      margin-top:10px;
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:10px 12px;
+      background: color-mix(in oklab, var(--card) 88%, var(--bg));
+      display:grid;
+      gap:6px;
+    }
+    .manualLine{
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.5;
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+    }
+    .stepNo{
+      color: var(--danger);
+      font-weight:900;
+      letter-spacing:.02em;
+    }
+    .manualChip{
+      border:1px solid var(--line);
+      border-radius:999px;
+      padding:4px 10px;
+      background: color-mix(in oklab, var(--card) 92%, transparent);
+      color: var(--text);
+      font-size:12px;
+      display:inline-flex;
+      gap:8px;
+      align-items:center;
+      white-space:nowrap;
+    }
+
     main{
       padding:14px;
       max-width:1150px;
@@ -150,6 +187,7 @@
       background: color-mix(in oklab, var(--danger) 10%, var(--card));
     }
     button.ghost{ background:transparent; }
+    button:disabled{ opacity:.55; cursor:not-allowed; }
 
     .btnbar{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
     .hr{ height:1px; background:var(--line); margin:12px 0; }
@@ -231,7 +269,7 @@
       background: color-mix(in oklab, var(--warn) 8%, var(--card));
     }
 
-    /* 商品行：基本は 2カラム（情報 / 操作） */
+    /* 商品行：2カラム */
     .prodRow{
       display:grid;
       grid-template-columns: 1fr 560px;
@@ -352,7 +390,7 @@
     .usedVal.negative{ color: var(--danger); }
     .usedVal.missing{ color: var(--warn); }
 
-    /* Master：横向き最適の2カラム枠 */
+    /* Master：横向き2カラム */
     .masterSplit{
       display:grid;
       gap:12px;
@@ -394,7 +432,7 @@
 <body>
 <header>
   <div class="top">
-    <h1>宴会 見込み原価（開始/終了在庫）- Sample E</h1>
+    <h1>宴会 見込み原価（開始/終了在庫）- Sample F</h1>
     <div class="topRight">
       <button id="btnTheme" class="themeBtn" title="テーマ切替">☀️ <span class="mono" style="font-size:12px;">LIGHT</span></button>
       <div class="pill"><span id="authState">未ログイン</span> <span class="mono" id="deviceId">—</span></div>
@@ -405,12 +443,30 @@
     <button class="tab" data-tab="master">商品マスタ</button>
     <button class="tab" data-tab="sync">同期/ログ</button>
   </nav>
+
+  <!-- ★手順マニュアル（ヘッダー付近に固定表示） -->
+  <div class="manualBar">
+    <div class="manualLine">
+      <span class="manualChip"><span class="stepNo">①</span>ログイン</span>
+      <span class="manualChip"><span class="stepNo">②</span>宴会情報入力</span>
+      <span class="manualChip"><span class="stepNo">③</span>商品入力（開始）</span>
+      <span class="manualChip"><span class="stepNo">④</span>開始確定</span>
+      <span class="manualChip"><span class="stepNo">⑤</span>終了入力</span>
+      <span class="manualChip"><span class="stepNo">⑥</span>宴会保存</span>
+    </div>
+    <div class="manualLine">
+      <span class="manualChip">保存後：宴会一覧で確認（フィルタ可）</span>
+      <span class="manualChip">開始は「確定」したら閉じてOK（同期＆復元）</span>
+    </div>
+  </div>
 </header>
 
 <main>
   <!-- BANQUET -->
   <section id="tab-banquet" class="grid">
+    <!-- ①ログイン -->
     <div class="card">
+      <h2 style="margin:0 0 10px; font-size:15px;"><span class="stepNo">①</span>ログイン（店舗共通）</h2>
       <div class="row">
         <div>
           <label>店舗共通メール</label>
@@ -429,7 +485,7 @@
       <div class="small">※同一アカウントでログインしている複数iPad間で、マスタ/宴会下書きが自動同期します（Realtime）。</div>
     </div>
 
-    <!-- 進行（下書き） -->
+    <!-- 進行（下書き） + ④⑤⑥ -->
     <div class="card">
       <div class="stageWrap">
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
@@ -442,8 +498,8 @@
 
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
           <div class="seg">
-            <button id="btnStageStart" class="active" type="button">開始入力</button>
-            <button id="btnStageEnd" type="button">終了入力</button>
+            <button id="btnStageStart" class="active" type="button"><span class="stepNo">③</span>開始入力</button>
+            <button id="btnStageEnd" type="button"><span class="stepNo">⑤</span>終了入力</button>
           </div>
           <button class="ghost" id="btnDraftSave" type="button">途中保存（同期）</button>
           <button class="danger" id="btnDraftClear" type="button">下書きを削除</button>
@@ -453,20 +509,20 @@
       <div class="hr"></div>
 
       <div class="btnbar" style="margin-top:0;">
-        <button class="primary" id="btnConfirmStart" type="button">開始を確定（同期して保存）→ 終了入力へ</button>
+        <button class="primary" id="btnConfirmStart" type="button"><span class="stepNo">④</span>開始を確定（同期して保存）→ <span class="stepNo">⑤</span>終了入力へ</button>
         <button class="ghost" id="btnBackToStart" type="button">開始を編集し直す（終了入力を破棄）</button>
-        <button class="primary" id="btnFinishEvent" type="button">宴会を完了して保存（eventに確定）</button>
+        <button class="primary" id="btnFinishEvent" type="button"><span class="stepNo">⑥</span>宴会を完了して保存（eventに確定）</button>
       </div>
 
       <div class="small" style="margin-top:8px;">
-        ✅開始は「確定」するとロックされ、閉じてもOK。終了時に開いて終了在庫だけ入れれば完了。<br>
+        ✅開始は「確定」するとロックされ、閉じてもOK（下書きが同期＆復元されます）。<br>
         ※複数端末で同時編集は上書きし合うので、基本は「担当1台」で運用推奨。
       </div>
     </div>
 
-    <!-- 予約情報 -->
+    <!-- ②宴会情報 -->
     <div class="card">
-      <h2 style="margin:0 0 10px; font-size:15px;">宴会 情報（開始確定後はロック）</h2>
+      <h2 style="margin:0 0 10px; font-size:15px;"><span class="stepNo">②</span>宴会 情報（開始確定後はロック）</h2>
 
       <div class="row">
         <div>
@@ -540,18 +596,26 @@
           <div class="small">使用数＝開始−終了</div>
         </div>
       </div>
-
-      <div class="small" style="margin-top:10px;">
-        開始入力モード：開始だけ入れて「開始確定」→ 終了入力モード：終了だけ入れて「完了して保存」。
-      </div>
     </div>
 
-    <!-- 商品入力 -->
+    <!-- ③商品入力 + 目安一括入力ボタン -->
     <div class="card">
-      <h2 style="margin:0 0 10px; font-size:15px;">商品入力</h2>
-      <div class="small" style="margin-bottom:8px;" id="productsHint">
-        開始モード：開始在庫を入力します（終了は後で）。終了モード：開始は固定、終了在庫を入力します。
+      <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+        <div>
+          <h2 style="margin:0 0 6px; font-size:15px;"><span class="stepNo">③</span>商品入力（開始 / 終了）</h2>
+          <div class="small" id="productsHint">
+            開始モード：開始在庫を入力 → <span class="stepNo">④</span>開始確定。終了モード：開始は固定、終了在庫を入力 → <span class="stepNo">⑥</span>保存。
+          </div>
+        </div>
+
+        <div class="btnbar" style="margin-top:0;">
+          <button class="primary" id="btnAutofillMin" type="button">
+            目安まで一括入力（開始）
+          </button>
+        </div>
       </div>
+
+      <div class="hr"></div>
 
       <div id="products" class="list"></div>
       <div id="noProducts" class="small">商品マスタが空です。「商品マスタ」タブで先に登録してください。</div>
@@ -632,7 +696,7 @@
           <div>
             <label>最低用意数（本）</label>
             <input id="mMin" inputmode="decimal" placeholder="例：6（目安）" />
-            <div class="small">初心者が準備しやすい目安として使います</div>
+            <div class="small">初心者が準備しやすい目安。宴会の開始で「目安一括入力」に使います。</div>
           </div>
         </div>
 
@@ -686,7 +750,7 @@
 <script>
 (() => {
   // =======================
-  // ここだけ差し替え
+  // ★ユーザー指定：自動入力済み
   // =======================
   const SUPABASE_URL = "https://pftjjrluhdbovoaxnykn.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBmdGpqcmx1aGRib3ZvYXhueWtuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMzUzMTUsImV4cCI6MjA4NjcxMTMxNX0.qX-LpvYcbu589h96FdxJmUEqYto64wniBcuGXraJaoU";
@@ -747,7 +811,6 @@
   // state
   let master = { version:1, items:[], lastSavedAt:null, lastSavedBy:null };
   let masterRowUpdatedAt = null;
-
   let events = [];
 
   // draft state
@@ -922,7 +985,7 @@
     const status =
       (stage === "start")
         ? "状態：開始入力中（終了未入力）"
-        : ((missingEnds === 0) ? "状態：確定（保存可能）" : "状態：未確定（終了未入力あり）");
+        : ((missingEnds === 0) ? "状態：確定（⑥保存可能）" : "状態：未確定（終了未入力あり）");
     $("kpiThisStatus").textContent = status;
   }
 
@@ -994,11 +1057,7 @@
   function loadLocalDraft(){
     const raw = localStorage.getItem(LOCAL_DRAFT_KEY);
     if(!raw) return null;
-    try{
-      return JSON.parse(raw);
-    }catch{
-      return null;
-    }
+    try{ return JSON.parse(raw); }catch{ return null; }
   }
 
   function saveLocalDraft(p){
@@ -1009,7 +1068,7 @@
     localStorage.removeItem(LOCAL_DRAFT_KEY);
   }
 
-  // ===== remote draft (supabase) =====
+  // ===== remote draft =====
   let draftSaveTimer = null;
   let draftSaving = false;
 
@@ -1035,7 +1094,7 @@
     return data.payload || null;
   }
 
-  async function saveRemoteDraft(immediate=false){
+  async function saveRemoteDraft(){
     const u = await getUser();
     if(!u) return;
 
@@ -1070,14 +1129,13 @@
     }
   }
 
-  function scheduleDraftSave(reason=""){
-    // ローカルは即保存
+  function scheduleDraftSave(){
+    // ローカル即保存（事故対策）
     const payload = buildDraftPayload();
     saveLocalDraft(payload);
     draftDirty = true;
     updateDraftInfoUI("保存中…");
 
-    // リモートはデバウンス
     clearTimeout(draftSaveTimer);
     draftSaveTimer = setTimeout(() => {
       saveRemoteDraft().catch(()=>{});
@@ -1095,14 +1153,13 @@
 
     label.textContent = `下書き：${saved}${by}${server}${dirty}` + (extra ? ` / ${extra}` : "");
 
-    // dot state
     dot.classList.remove("ok","run");
     if(stage === "end") dot.classList.add("run");
     if(!draftDirty && draftSavedAt) dot.classList.add("ok");
   }
 
   function updateStageUI(){
-    $("stageLabel").textContent = (stage === "start") ? "開始入力" : "終了入力";
+    $("stageLabel").textContent = (stage === "start") ? "③開始入力" : "⑤終了入力";
     $("btnStageStart").classList.toggle("active", stage === "start");
     $("btnStageEnd").classList.toggle("active", stage === "end");
 
@@ -1110,10 +1167,13 @@
     $("btnFinishEvent").style.display = (stage === "end") ? "" : "none";
     $("btnBackToStart").style.display = (stage === "end") ? "" : "none";
 
+    // 目安一括入力ボタン：開始モードだけ表示
+    $("btnAutofillMin").style.display = (stage === "start") ? "" : "none";
+
     $("productsHint").textContent =
       (stage === "start")
-        ? "開始モード：開始在庫を入力します（終了は後で）。入力は自動で下書き保存＆同期されます。"
-        : "終了モード：開始は固定です。終了在庫を入力すると差分から見込み原価が出ます。";
+        ? "開始モード：③商品入力 → ④開始確定。目安がある商品は「目安まで一括入力」も使えます。"
+        : "終了モード：開始は固定です。⑤終了入力 → ⑥宴会を完了して保存。";
 
     // 開始確定後はメタ情報をロック（事故防止）
     const lock = (stage === "end");
@@ -1124,14 +1184,6 @@
     });
 
     updateDraftInfoUI("");
-  }
-
-  function setStage(next){
-    stage = next;
-    updateStageUI();
-    renderProducts();
-    recalcKpi();
-    scheduleDraftSave("stage");
   }
 
   // ===== master / events =====
@@ -1176,11 +1228,10 @@
     $("masterUpdated").textContent = masterRowUpdatedAt || "—";
     alert("マスタを保存して同期しました");
 
-    // マスタ変更後も下書きは消さない（アイテムID基準で維持）
     initQtyMaps();
     renderProducts();
     recalcKpi();
-    scheduleDraftSave("master");
+    scheduleDraftSave();
   }
 
   async function loadEvents(){
@@ -1201,6 +1252,44 @@
     events = data || [];
     $("eventsCount").textContent = String(events.length);
     renderEvents();
+  }
+
+  // ===== 目安一括入力（開始） =====
+  function applyMinToAllStarts(){
+    if(stage !== "start"){
+      alert("目安一括入力は「開始入力」モードで使えます。");
+      return;
+    }
+    const items = master.items || [];
+    if(!items.length){
+      alert("商品マスタが空です。");
+      return;
+    }
+
+    const targets = items
+      .map(it => ({ id: it.id, name: it.name, minQty: it.minQty }))
+      .filter(x => x.minQty !== null && x.minQty !== undefined && Number(x.minQty) > 0);
+
+    if(!targets.length){
+      alert("マスタの「最低用意数（目安）」が設定された商品がありません。");
+      return;
+    }
+
+    const msg =
+      `マスタの目安（最低用意数）まで、開始在庫を一括入力します。\n` +
+      `対象：${targets.length}品\n` +
+      `※対象商品の開始入力は上書きされます。\nよろしいですか？`;
+
+    if(!confirm(msg)) return;
+
+    for(const t of targets){
+      start10[t.id] = to10(t.minQty);
+    }
+
+    renderProducts();
+    recalcKpi();
+    scheduleDraftSave();
+    alert("目安まで一括入力しました（開始）。");
   }
 
   // ===== render master =====
@@ -1241,7 +1330,7 @@
         renderMaster();
         renderProducts();
         recalcKpi();
-        scheduleDraftSave("master-del");
+        scheduleDraftSave();
       });
       el.querySelector('[data-act="edit"]').addEventListener("click", () => {
         const name = prompt("商品名", it.name);
@@ -1256,17 +1345,17 @@
 
         const min = prompt("最低用意数（本）※0.1刻みOK、空欄で未設定", (it.minQty ?? "") === null ? "" : String(it.minQty ?? ""));
         if(min === null) return;
-        let minQty = null;
+        let minQty2 = null;
         if(String(min).trim() !== ""){
           const n = parseNumberSafe(min);
           if(n === null || n < 0) return alert("最低用意数が不正です");
-          minQty = Number(n.toFixed(1));
+          minQty2 = Number(n.toFixed(1));
         }
 
         it.name = name.trim() || it.name;
         it.unit = (unit.trim() || "本");
         it.costYen = costYen;
-        it.minQty = minQty;
+        it.minQty = minQty2;
 
         it.category = prompt("カテゴリ（任意）", it.category || "")?.trim() ?? it.category;
         it.note = prompt("備考（任意）", it.note || "")?.trim() ?? it.note;
@@ -1274,7 +1363,7 @@
         renderMaster();
         renderProducts();
         recalcKpi();
-        scheduleDraftSave("master-edit");
+        scheduleDraftSave();
       });
       box.appendChild(el);
     });
@@ -1321,7 +1410,6 @@
         ? `最低用意 ${minQty.toFixed(1)}${escapeHtml(it.unit||"本")}`
         : `最低用意 —`;
 
-      // stage-specific boxes
       const startBox = (stage === "start")
         ? `
           <div class="ctrlBox startBox startArea">
@@ -1360,7 +1448,7 @@
           <div class="ctrlBox endBox endArea readonly">
             <div class="ctrlTitle"><span>終了（後で）</span><span class="mono">—</span></div>
             <div class="roQty mono">—</div>
-            <div class="small">開始確定後に入力します</div>
+            <div class="small">④開始確定後に入力します</div>
           </div>
         `;
 
@@ -1389,7 +1477,7 @@
       box.appendChild(row);
     });
 
-    // event delegation（ボタン/入力）
+    // delegation
     box.onclick = (ev) => {
       const btn = ev.target.closest(".stepBtn");
       if(!btn) return;
@@ -1412,7 +1500,7 @@
       }
       renderProducts();
       recalcKpi();
-      scheduleDraftSave("qty");
+      scheduleDraftSave();
     };
 
     box.onchange = (ev) => {
@@ -1439,7 +1527,7 @@
       }
       renderProducts();
       recalcKpi();
-      scheduleDraftSave("qty");
+      scheduleDraftSave();
     };
   }
 
@@ -1522,7 +1610,7 @@
     $("kpiAvgPerHead").textContent = (sumGuests > 0) ? `平均（原価/人） ${yen(sumCostComplete / sumGuests)}` : "—";
   }
 
-  // ===== actions: stage flow =====
+  // ===== flow actions =====
   function ensureDraftInitialized(){
     if(!$("evDate").value) $("evDate").value = todayISO();
     if($("evExt").value === "") $("evExt").value = "0";
@@ -1531,51 +1619,39 @@
     updateStageUI();
     renderProducts();
     recalcKpi();
-    scheduleDraftSave("init");
+    scheduleDraftSave();
   }
 
   async function confirmStart(){
     if(!master.items?.length) return alert("商品マスタが空です。先に登録してください。");
 
-    // 必須ではないけど、最低限の事故防止
     const date = $("evDate").value || "";
-    if(!date){
-      alert("日付を入れてください");
-      return;
-    }
+    if(!date) return alert("日付を入れてください");
 
-    if(!confirm("開始を確定します。以後、開始数量と宴会情報はロックされます。よろしいですか？")) return;
+    if(!confirm("④開始を確定します。以後、開始数量と宴会情報はロックされます。よろしいですか？")) return;
 
-    // 終了入力へ：end10を全て未入力に（終了は後で）
     stage = "end";
-    (master.items || []).forEach(it => {
-      if(end10[it.id] === undefined) end10[it.id] = null;
-      end10[it.id] = null;
-    });
+    (master.items || []).forEach(it => { end10[it.id] = null; });
 
     updateStageUI();
     renderProducts();
     recalcKpi();
+    scheduleDraftSave();
 
-    // 即同期
-    const payload = buildDraftPayload();
-    saveLocalDraft(payload);
-    await saveRemoteDraft(true);
+    // すぐ同期（確定の意図を強く残す）
+    await saveRemoteDraft();
   }
 
   async function backToStart(){
     if(!confirm("開始を編集し直します。現在の終了入力は破棄されます。よろしいですか？")) return;
     stage = "start";
-    // 終了は破棄
     (master.items || []).forEach(it => end10[it.id] = null);
 
     updateStageUI();
     renderProducts();
     recalcKpi();
-
-    const payload = buildDraftPayload();
-    saveLocalDraft(payload);
-    await saveRemoteDraft(true);
+    scheduleDraftSave();
+    await saveRemoteDraft();
   }
 
   function buildEventPayloadFromDraft(){
@@ -1601,7 +1677,6 @@
 
       const hasStart = s10 !== 0;
       const hasEnd = !(e10 === null || e10 === undefined);
-
       if(!hasStart && !hasEnd) continue;
 
       let used10 = null;
@@ -1654,7 +1729,7 @@
   }
 
   async function finishEvent(){
-    if(stage !== "end") return alert("まず開始を確定して、終了入力に進んでください。");
+    if(stage !== "end") return alert("まず④開始確定して、⑤終了入力に進んでください。");
 
     const payload = buildEventPayloadFromDraft();
     if(payload.missingEnds > 0){
@@ -1679,17 +1754,14 @@
       return alert("宴会保存エラー: " + error.message);
     }
 
-    // draft削除（ローカル&リモート）
     await clearDraftAll(true);
-    alert("宴会を保存しました（完了）");
+    alert("⑥宴会を保存しました（完了）");
     await loadEvents();
   }
 
   async function clearDraftAll(silent=false){
-    // local
     clearLocalDraft();
 
-    // reset state
     stage = "start";
     start10 = {};
     end10 = {};
@@ -1698,7 +1770,6 @@
     draftServerUpdatedAt = null;
     draftDirty = false;
 
-    // reset meta
     $("evDate").value = todayISO();
     $("evGuests").value = "";
     $("evDrinkPrice").value = "";
@@ -1707,7 +1778,6 @@
     $("evStaff").value = "";
     updateDurationUI();
 
-    // remote delete
     const u = await getUser();
     if(u){
       const { error } = await sb
@@ -1726,11 +1796,8 @@
     if(!silent) alert("下書きを削除しました");
   }
 
-  // ===== load draft on startup / reload =====
   async function loadDraftPreferNewer(){
-    // まずローカル
     const local = loadLocalDraft();
-    // 次にリモート（ログイン時）
     const remote = await loadRemoteDraft();
 
     const localAt = local?.savedAt ? Date.parse(local.savedAt) : 0;
@@ -1738,7 +1805,7 @@
 
     if(remote && remoteAt >= localAt){
       applyDraftPayload(remote);
-      saveLocalDraft(remote); // ローカルも合わせる
+      saveLocalDraft(remote);
       updateDraftInfoUI("server採用");
       return;
     }
@@ -1748,7 +1815,6 @@
       return;
     }
 
-    // どっちも無ければ新規
     ensureDraftInitialized();
     updateDraftInfoUI("新規");
   }
@@ -1758,6 +1824,7 @@
     const email = ($("email").value || "").trim();
     const password = $("pw").value || "";
     if(!email || !password) return alert("メールとパスワードを入力して");
+
     const { error } = await sb.auth.signInWithPassword({ email, password });
     if(error){
       log("login failed", error);
@@ -1773,14 +1840,12 @@
 
   $("btnReloadAll").addEventListener("click", () => reloadAll());
 
-  // stage buttons
   $("btnStageStart").addEventListener("click", () => {
     if(stage === "start") return;
     backToStart().catch(()=>{});
   });
   $("btnStageEnd").addEventListener("click", () => {
     if(stage === "end") return;
-    // endに行くには開始確定を推奨
     confirmStart().catch(()=>{});
   });
 
@@ -1789,9 +1854,8 @@
   $("btnFinishEvent").addEventListener("click", () => finishEvent().catch(()=>{}));
 
   $("btnDraftSave").addEventListener("click", async () => {
-    const payload = buildDraftPayload();
-    saveLocalDraft(payload);
-    await saveRemoteDraft(true);
+    scheduleDraftSave();
+    await saveRemoteDraft();
     alert("途中保存しました（同期）");
   });
 
@@ -1800,17 +1864,20 @@
     await clearDraftAll(false);
   });
 
-  // meta inputs => auto save (startのみ編集可能だが、念のため共通で)
+  // ★目安一括入力
+  $("btnAutofillMin").addEventListener("click", () => applyMinToAllStarts());
+
+  // meta auto-save
   ["evDate","evGuests","evDrinkPrice","evExt","evStyle","evStaff"].forEach(id => {
     $(id).addEventListener("input", () => {
       updateDurationUI();
       recalcKpi();
-      scheduleDraftSave("meta");
+      scheduleDraftSave();
     });
     $(id).addEventListener("change", () => {
       updateDurationUI();
       recalcKpi();
-      scheduleDraftSave("meta");
+      scheduleDraftSave();
     });
   });
 
@@ -1858,7 +1925,7 @@
     renderMaster();
     renderProducts();
     recalcKpi();
-    scheduleDraftSave("master-add");
+    scheduleDraftSave();
   });
 
   $("btnSaveMaster").addEventListener("click", saveMaster);
@@ -1889,7 +1956,6 @@
         loadEvents().catch(e => log("loadEvents failed", e));
       }
       if(n.kind === DRAFT_KIND && n.doc_key === DRAFT_KEY){
-        // 他端末の下書き更新を反映
         loadDraftPreferNewer().catch(e => log("loadDraftPreferNewer failed", e));
       }
     }).subscribe((status) => {
@@ -1901,7 +1967,6 @@
   async function reloadAll(){
     const u = await refreshAuthState();
     if(!u){
-      // ログインなしでもローカル下書きは読み込む
       const local = loadLocalDraft();
       if(local) applyDraftPayload(local);
       else ensureDraftInitialized();
@@ -1914,13 +1979,11 @@
   }
 
   // initial
-  applyTheme(localStorage.getItem(THEME_KEY) || "light");
   $("evDate").value = todayISO();
   $("evExt").value = "0";
   updateDurationUI();
   updateStageUI();
   refreshAuthState().then(() => {
-    // 初回はローカル下書きがあれば採用（未ログインでも）
     const local = loadLocalDraft();
     if(local) applyDraftPayload(local);
     else ensureDraftInitialized();
