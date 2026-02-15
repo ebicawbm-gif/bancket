@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="color-scheme" content="light dark" />
-  <title>宴会 見込み原価（開始/終了在庫） Sample J</title>
+  <title>宴会 見込み原価（開始/終了在庫） Sample K</title>
 
   <style>
     :root{
@@ -53,10 +53,8 @@
     .small{ font-size:12px; color:var(--muted); line-height:1.5; }
     .mono{ font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace; }
 
-    .stepNo{ display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px; border-radius:999px; border:2px solid var(--danger);
-      color:var(--danger); font-weight:900; font-size:16px; line-height:1; flex:0 0 auto; transform: translateY(2px); }
-    @media (min-width: 900px) and (orientation: landscape){ .stepNo{ width:36px; height:36px; font-size:19px; border-width:2.5px; } }
-
+    .stepNo{ display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px; border-radius:999px; border:2.5px solid var(--danger);
+      color:var(--danger); font-weight:900; font-size:18px; line-height:1; flex:0 0 auto; transform: translateY(2px); }
     .manualBar{ margin-top:10px; border:1px solid var(--line); border-radius:14px; padding:10px 12px;
       background: color-mix(in oklab, var(--card) 88%, var(--bg)); display:grid; gap:6px; }
     .manualLine{ font-size:12px; color:var(--muted); line-height:1.5; display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
@@ -85,7 +83,6 @@
     .item{ border:1px solid var(--line); background: color-mix(in oklab, var(--card) 92%, var(--bg)); border-radius:14px; padding:12px; }
     .itemHeader{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
     .itemHeader h3{ margin:0; font-size:14px; }
-
     .badge{ font-size:11px; color:var(--muted); padding:4px 8px; border:1px solid var(--line); border-radius:999px; white-space:nowrap;
       background: color-mix(in oklab, var(--card) 80%, transparent); display:inline-flex; gap:6px; align-items:center; }
     .badge.warn{ color: color-mix(in oklab, var(--warn) 80%, var(--text)); border-color: color-mix(in oklab, var(--warn) 45%, var(--line));
@@ -94,7 +91,6 @@
     .prodRow{ display:grid; grid-template-columns: 1fr 560px; gap:10px; align-items:center; padding:12px 0;
       border-top:1px dashed color-mix(in oklab, var(--text) 12%, transparent); }
     .prodRow:first-child{ border-top:none; padding-top:0; }
-
     .prodName{ font-size:16px; font-weight:800; text-align:center; letter-spacing:.02em; }
     .prodMeta{ font-size:12px; color:var(--muted); margin-top:6px; text-align:center; }
 
@@ -109,12 +105,10 @@
       background: color-mix(in oklab, var(--card) 85%, var(--bg)); user-select:none; cursor:pointer; font-size:14px; font-weight:700; }
     .startBox .stepBtn.primary{ border-color: color-mix(in oklab, #ef4444 45%, var(--line)); background: color-mix(in oklab, #ef4444 10%, var(--card)); }
     .endBox .stepBtn.primary{ border-color: color-mix(in oklab, #3b82f6 45%, var(--line)); background: color-mix(in oklab, #3b82f6 10%, var(--card)); }
-
     .qtyInput{ height:50px; text-align:center; font-size:18px; padding:12px 10px; border-radius:12px; border:1px solid var(--line);
       background: color-mix(in oklab, var(--card) 78%, var(--bg)); }
     .roQty{ height:50px; border-radius:12px; border:1px solid var(--line); background: color-mix(in oklab, var(--card) 78%, var(--bg));
       display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:900; }
-
     .usedBox{ border:1px solid var(--line); border-radius:14px; padding:12px; background: color-mix(in oklab, var(--card) 92%, var(--bg));
       display:flex; flex-direction:column; gap:8px; justify-content:center; align-items:flex-end; min-height:100%; }
     .usedLine{ font-size:12px; color:var(--muted); }
@@ -127,21 +121,13 @@
       .controls{ grid-template-columns: 1fr; }
       .usedBox{ align-items:flex-start; }
     }
-    @media (min-width: 900px) and (max-width: 1100px) and (orientation: landscape){
-      main{ max-width:1024px; padding:12px; }
-      .prodRow{ grid-template-columns: 360px 1fr; gap:12px; }
-      .controls{ grid-template-columns: 1fr 1fr; grid-template-areas:"start end" "used used"; gap:12px; }
-      .startArea{ grid-area:start; } .endArea{ grid-area:end; } .usedArea{ grid-area:used; }
-      .usedBox{ align-items:flex-start; }
-      .stepBtn{ height:54px; } .qtyInput{ height:54px; font-size:19px; } .roQty{ height:54px; font-size:19px; }
-    }
   </style>
 </head>
 
 <body>
 <header>
   <div class="top">
-    <h1>宴会 見込み原価（開始/終了在庫） - Sample J</h1>
+    <h1>宴会 見込み原価（開始/終了在庫） - Sample K</h1>
     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
       <button id="btnTheme" class="themeBtn" type="button">☀️ <span class="mono" style="font-size:12px;">LIGHT</span></button>
       <div class="pill"><span id="authState">未ログイン</span> <span class="mono" id="deviceId">—</span></div>
@@ -157,17 +143,18 @@
   <div class="manualBar">
     <div class="manualLine">
       <span class="manualChip"><span class="stepNo">1</span>ログイン</span>
-      <span class="manualChip"><span class="stepNo">2</span>データ再読み込み（必須）</span>
-      <span class="manualChip"><span class="stepNo">3</span>宴会情報入力</span>
-      <span class="manualChip"><span class="stepNo">4</span>商品入力（開始）</span>
+      <span class="manualChip"><span class="stepNo">2</span>再読み込み（自動）</span>
+      <span class="manualChip"><span class="stepNo">3</span>宴会情報</span>
+      <span class="manualChip"><span class="stepNo">4</span>開始入力</span>
       <span class="manualChip"><span class="stepNo">5</span>途中保存（同期）</span>
       <span class="manualChip"><span class="stepNo">6</span>開始確定</span>
       <span class="manualChip"><span class="stepNo">7</span>終了入力</span>
       <span class="manualChip"><span class="stepNo">8</span>宴会保存</span>
     </div>
     <div class="manualLine">
-      <span class="manualChip">②完了後は③へ自動スクロール</span>
-      <span class="manualChip">⑤は誤タップ/再読み込み対策（復元）</span>
+      <span class="manualChip">②完了後：③へ自動スクロール</span>
+      <span class="manualChip">⑤で復元（誤タップ/再読み込み対策）</span>
+      <span class="manualChip">宴会一覧は2段階削除</span>
     </div>
   </div>
 </header>
@@ -191,21 +178,22 @@
         <button class="primary" id="btnLogin" type="button">ログイン</button>
         <button class="ghost" id="btnLogout" type="button">ログアウト</button>
       </div>
-      <div class="small">※同一アカウントでログインしている複数iPad間で、マスタ/宴会下書きが自動同期します（Realtime）。</div>
+      <div class="small">
+        ※ログイン成功後は <b>自動で②再読み込み</b> を開始します（押し忘れ防止）。
+      </div>
     </div>
 
     <div class="card" id="reloadCard" style="display:none;">
-      <h2 style="margin:0 0 10px; font-size:15px;"><span class="stepNo">2</span>データ再読み込み（必須）</h2>
+      <h2 style="margin:0 0 10px; font-size:15px;"><span class="stepNo">2</span>データ再読み込み（自動）</h2>
       <div class="lockNote">
         <div style="flex:0 0 auto;">⚠️</div>
         <div>
-          <div style="font-weight:900; margin-bottom:4px;">ログイン直後は必ず「再読み込み」してください（押し忘れ防止）。</div>
-          <div class="small">完了するまで、③以降はロックされます。</div>
+          <div style="font-weight:900; margin-bottom:4px;">②が完了するまで③以降はロックされます。</div>
+          <div class="small">（通信エラー時のみ、再試行ボタンを押してください）</div>
         </div>
       </div>
       <div class="btnbar">
-        <button class="primary" id="btnReloadNow" type="button"><span class="stepNo">2</span>データを再読み込みする</button>
-        <button class="ghost" id="btnReloadRetry" type="button">再試行</button>
+        <button class="primary" id="btnReloadRetry" type="button">再試行</button>
       </div>
       <div id="reloadMsg" class="small mono" style="margin-top:8px;">—</div>
     </div>
@@ -317,13 +305,13 @@
 
         <div class="btnbar" style="margin-top:0;">
           <button class="primary" id="btnConfirmStart" type="button">
-            <span class="stepNo">6</span>開始を確定（同期して保存）→ <span class="stepNo">7</span>終了入力へ
+            <span class="stepNo">6</span>開始を確定 → <span class="stepNo">7</span>終了入力へ
           </button>
           <button class="ghost" id="btnBackToStart" type="button" style="display:none;">
             開始を編集し直す（終了入力を破棄）
           </button>
           <button class="primary" id="btnFinishEvent" type="button" style="display:none;">
-            <span class="stepNo">8</span>宴会を完了して保存（eventに確定）
+            <span class="stepNo">8</span>宴会を完了して保存
           </button>
         </div>
 
@@ -338,9 +326,6 @@
           <div>
             <h2 style="margin:0 0 6px; font-size:15px;"><span class="stepNo">4</span>商品入力（開始 / 終了）</h2>
             <div class="small" id="productsHint">開始モード：④商品入力 → ⑥開始確定</div>
-          </div>
-          <div class="btnbar" style="margin-top:0;">
-            <button class="primary" id="btnAutofillMin" type="button">目安まで一括入力（開始）</button>
           </div>
         </div>
 
@@ -423,7 +408,7 @@
         <div>
           <label>最低用意数（本）</label>
           <input id="mMin" inputmode="decimal" placeholder="例：6（0.1刻みOK）" />
-          <div class="small">④の「目安まで一括入力（開始）」に使います。</div>
+          <div class="small">不足表示に使います（開始入力の目安）。</div>
         </div>
       </div>
 
@@ -457,11 +442,10 @@
       <h2 style="margin:0 0 10px; font-size:15px;">同期/ログ</h2>
       <div class="row">
         <div class="pill">Realtime: <b id="rtState">—</b></div>
-        <div class="pill">master updated_at: <b id="masterUpdated">—</b></div>
         <div class="pill">events loaded: <b id="eventsCount">0</b></div>
       </div>
       <div class="btnbar">
-        <button class="ghost" id="btnDump" type="button">現在の内部データをログに出す</button>
+        <button class="ghost" id="btnDump" type="button">内部データをログに出す</button>
       </div>
       <div class="hr"></div>
       <div class="small">ログ</div>
@@ -474,7 +458,7 @@
 <script>
 (() => {
   // =======================
-  // ★固定：あなた指定のURL/ANON（埋め込み済み）
+  // ★ここが今回の要：新ANON埋め込み済み
   // =======================
   const SUPABASE_URL = "https://pftjjrluhdbovoaxnykn.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBmdGpqcmx1aGRib3ZvYXhueWtuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMzUzMTUsImV4cCI6MjA4NjcxMTMxNX0.qX-LpvYcbu589h96FdxJmUEqYto64wniBcuGXraJaoU";
@@ -482,27 +466,20 @@
 
   const DRAFT_KIND = "event_draft";
   const DRAFT_KEY  = "active";
-  const LOCAL_DRAFT_KEY = "banquet_draft_v2";
+  const LOCAL_DRAFT_KEY = "banquet_draft_k";
   const THEME_KEY = "banquet_theme";
   const DID_KEY = "banquet_device_id";
-
-  // 保存頻度（軽量化）
-  const LOCAL_SAVE_DEBOUNCE_MS = 1200;     // localStorageは少し遅め（復元目的）
-  const REMOTE_SAVE_MIN_INTERVAL_MS = 2000; // supabase upsertは間引き（2秒間隔）
-  const REMOTE_SAVE_DEBOUNCE_MS = 700;     // 触り続けた時にまとめる
 
   const { createClient } = supabase;
   const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   const $ = (id) => document.getElementById(id);
-
-  const CSS_ESC = (window.CSS && CSS.escape) ? CSS.escape : (s)=>String(s).replace(/[^\w-]/g, "\\$&");
 
   // -----------------------
   // Theme (default light)
   // -----------------------
   function applyTheme(theme){
     document.documentElement.dataset.theme = theme;
-    document.documentElement.style.colorScheme = theme; // iOSフォーム暗転対策
+    document.documentElement.style.colorScheme = theme;
     const btn = $("btnTheme");
     btn.innerHTML = theme === "dark"
       ? `🌙 <span class="mono" style="font-size:12px;">DARK</span>`
@@ -536,7 +513,6 @@
     document.querySelectorAll(".tab").forEach(x => { if(x.dataset.tab === tab) x.classList.add("active"); });
     ["banquet","master","sync"].forEach(k => { $("tab-"+k).style.display = (k === tab) ? "" : "none"; });
     if(tab === "master") renderMaster();
-    if(tab === "banquet"){ /* no-op */ }
   }
   document.querySelectorAll(".tab").forEach(btn => {
     btn.addEventListener("click", () => { if(btn.classList.contains("disabled")) return; showTab(btn.dataset.tab); });
@@ -568,6 +544,8 @@
   // ②再読み込みロック
   // -----------------------
   let mustReload = true;
+  let autoReloadInProgress = false;
+
   function setMustReload(on){
     mustReload = !!on;
     $("reloadCard").style.display = mustReload ? "" : "none";
@@ -577,7 +555,6 @@
   }
   function setReloadMsg(t){ $("reloadMsg").textContent = t || "—"; }
   function setReloadBusy(b, t){
-    $("btnReloadNow").disabled = !!b;
     $("btnReloadRetry").disabled = !!b;
     setReloadMsg(t || (b ? "再読み込み中…" : "—"));
   }
@@ -585,42 +562,21 @@
   // -----------------------
   // App state
   // -----------------------
-  let master = { version:1, items:[], lastSavedAt:null, lastSavedBy:null };
-  let masterRowUpdatedAt = null;
-
-  // ✅ Map cache（find廃止）
-  let itemsById = new Map();
-  let min10ById = new Map();
-  let costYenById = new Map();
-
-  let events = [];             // docs rows
-  let eventsByKey = new Map(); // doc_key -> row
-
-  // Draft
+  let master = { version:1, items:[] };
+  let events = [];
   let stage = "start"; // start/end
   let start10 = {};
   let end10 = {};
 
-  // ✅ 集計を増分更新
-  let itemStatsById = new Map(); // itemId -> {lineCost, usedPos, missing, negative}
-  let agg = { total:0, usedItemCount:0, missingEnds:0, negativeCount:0 };
-
-  // Draft bookkeeping
+  // draft
   let draftSavedAt = null;
   let draftSavedBy = null;
   let draftServerUpdatedAt = null;
   let draftDirty = false;
 
-  // Save schedulers
-  let localSaveTimer = null;
-  let remoteSaveTimer = null;
-  let remoteLastSentAt = 0;
-  let remoteInFlight = false;
-  let pendingRemote = false;
-
-  // DOM caches for product rows（差分更新）
-  let productRowElById = new Map();
-  let productsBuiltForStage = null;
+  // delete-arm for events（2段階）
+  let armedDeleteEventKey = null;
+  let armedDeleteTimer = null;
 
   // Realtime
   let rtChannel = null;
@@ -629,30 +585,13 @@
   // Auth
   // -----------------------
   async function getUser(){
-    const { data, error } = await sb.auth.getUser();
-    if(error) log("auth.getUser error", error);
+    const { data } = await sb.auth.getUser();
     return data?.user || null;
   }
   async function refreshAuthState(){
     const u = await getUser();
     $("authState").textContent = u ? `ログイン中: ${u.email || "(no email)"}` : "未ログイン";
     return u;
-  }
-
-  // -----------------------
-  // Cache rebuild
-  // -----------------------
-  function rebuildItemCaches(){
-    itemsById = new Map();
-    min10ById = new Map();
-    costYenById = new Map();
-    (master.items||[]).forEach(it => {
-      itemsById.set(it.id, it);
-      costYenById.set(it.id, Number(it.costYen||0));
-      const minQty = (it.minQty===null || it.minQty===undefined) ? null : Number(it.minQty);
-      const min10 = (minQty!==null && Number.isFinite(minQty) && minQty>0) ? to10(minQty) : null;
-      min10ById.set(it.id, min10);
-    });
   }
 
   // -----------------------
@@ -664,7 +603,7 @@
 
     const { data, error } = await sb
       .from("docs")
-      .select("payload, updated_at")
+      .select("payload")
       .eq("kind","master")
       .eq("doc_key","main")
       .maybeSingle();
@@ -672,11 +611,11 @@
     if(error) throw error;
 
     if(!data){
-      const seed = { version:1, items:[], lastSavedAt:null, lastSavedBy:getOrCreateDeviceId() };
+      const seed = { version:1, items:[] };
       const ins = await sb
         .from("docs")
         .insert({ user_id:u.id, kind:"master", doc_key:"main", payload:seed })
-        .select("payload, updated_at")
+        .select("payload")
         .single();
       if(ins.error) throw ins.error;
       return ins.data;
@@ -698,23 +637,12 @@
   async function loadMaster(){
     const u = await getUser();
     if(!u) return;
-
     const row = await ensureMasterRow();
     master = row.payload || { version:1, items:[] };
-    masterRowUpdatedAt = row.updated_at || null;
-    $("masterUpdated").textContent = masterRowUpdatedAt || "—";
-
-    rebuildItemCaches();
     initQtyMaps();
-
-    // ✅ 商品DOMは stage依存。必要なら全再構築
-    buildProductsListIfNeeded(true);
-
-    recomputeAggAll();
-    updateDurationUI();
-    updateStageUI();
-    updateAllKpis();
     renderMaster();
+    renderProducts();
+    updateAllKpis();
   }
 
   async function saveMaster(){
@@ -722,134 +650,24 @@
     const u = await getUser();
     if(!u) return alert("先にログインして");
 
-    master.lastSavedAt = new Date().toISOString();
-    master.lastSavedBy = getOrCreateDeviceId();
-
-    const { data, error } = await sb
+    const { error } = await sb
       .from("docs")
-      .upsert(
-        { user_id:u.id, kind:"master", doc_key:"main", payload:master },
-        { onConflict:"user_id,kind,doc_key" }
-      )
-      .select("updated_at")
-      .single();
+      .upsert({ user_id:u.id, kind:"master", doc_key:"main", payload:master }, { onConflict:"user_id,kind,doc_key" });
 
     if(error){
       log("saveMaster error", error);
       return alert("マスタ保存エラー: " + error.message);
     }
-    masterRowUpdatedAt = data?.updated_at || null;
-    $("masterUpdated").textContent = masterRowUpdatedAt || "—";
-
-    rebuildItemCaches();
-    initQtyMaps();
-    buildProductsListIfNeeded(true);
-    recomputeAggAll();
-    updateAllKpis();
-
-    markDraftDirty("master saved");
     alert("マスタを保存して同期しました");
   }
 
   // -----------------------
-  // Draft meta + sales
-  // -----------------------
-  function updateDurationUI(){
-    const ext = Math.max(0, parseIntSafe($("evExt").value) || 0);
-    $("evDuration").textContent = `${90 + 30*ext}分`;
-  }
-  function getDraftSalesYen(){
-    const guests = parseIntSafe($("evGuests").value);
-    const per = parseIntSafe($("evDrinkPrice").value);
-    if(!guests || guests<=0) return null;
-    if(!per || per<=0) return null;
-    return guests*per;
-  }
-
-  // -----------------------
-  // ✅ 増分集計
-  // -----------------------
-  function computeItemStats(itemId){
-    const costYen = costYenById.get(itemId) || 0;
-    const s10 = start10[itemId] || 0;
-    const e10 = end10[itemId];
-
-    const missing = (s10>0 && (e10===null || e10===undefined));
-    if(e10===null || e10===undefined){
-      return { lineCost:0, usedPos:false, missing, negative:false };
-    }
-
-    const used10 = s10 - e10;
-    const negative = used10 < 0;
-    const used = used10 / 10;
-    const usedPos = used > 0;
-    const lineCost = usedPos ? Math.round(used * costYen) : 0;
-    return { lineCost, usedPos, missing, negative };
-  }
-
-  function recomputeAggAll(){
-    itemStatsById = new Map();
-    agg = { total:0, usedItemCount:0, missingEnds:0, negativeCount:0 };
-
-    for(const it of (master.items||[])){
-      const st = computeItemStats(it.id);
-      itemStatsById.set(it.id, st);
-      agg.total += st.lineCost;
-      agg.usedItemCount += st.usedPos ? 1 : 0;
-      agg.missingEnds += st.missing ? 1 : 0;
-      agg.negativeCount += st.negative ? 1 : 0;
-    }
-  }
-
-  function updateAggForItem(itemId){
-    const prev = itemStatsById.get(itemId) || { lineCost:0, usedPos:false, missing:false, negative:false };
-    const next = computeItemStats(itemId);
-
-    agg.total += (next.lineCost - prev.lineCost);
-    agg.usedItemCount += (next.usedPos ? 1 : 0) - (prev.usedPos ? 1 : 0);
-    agg.missingEnds += (next.missing ? 1 : 0) - (prev.missing ? 1 : 0);
-    agg.negativeCount += (next.negative ? 1 : 0) - (prev.negative ? 1 : 0);
-
-    itemStatsById.set(itemId, next);
-  }
-
-  // -----------------------
-  // KPI（全走査しない）
-  // -----------------------
-  function updateAllKpis(){
-    $("kpiThisCost").textContent = yen(agg.total);
-    $("kpiThisItems").textContent = String(agg.usedItemCount);
-
-    const extraNeg = agg.negativeCount ? ` / 増加疑い ${agg.negativeCount}` : "";
-    $("kpiMissingEnds").textContent = `未入力 ${agg.missingEnds}` + extraNeg;
-
-    const sales = getDraftSalesYen();
-    if(sales !== null){
-      $("kpiThisSales").textContent = yen(sales);
-      $("kpiThisCostRate").textContent = pct(agg.total / sales);
-      $("kpiSalesHint").textContent = "—";
-    }else{
-      $("kpiThisSales").textContent = "—";
-      $("kpiThisCostRate").textContent = "—";
-      $("kpiSalesHint").textContent = "人数と単価を入れると計算";
-    }
-
-    const status = (stage === "start")
-      ? "状態：④開始入力中（⑦終了未入力）"
-      : (agg.missingEnds===0 ? "状態：確定（⑧保存可能）" : "状態：未確定（終了未入力あり）");
-    $("kpiThisStatus").textContent = status;
-
-    updateDraftInfoUI("");
-  }
-
-  // -----------------------
-  // Draft payload（保存時だけ生成）
+  // Draft (local + remote)
   // -----------------------
   function buildDraftPayload(){
-    const date = $("evDate").value || todayISO();
     const guests = parseIntSafe($("evGuests").value);
-    const drinkPricePerHeadYen = parseIntSafe($("evDrinkPrice").value);
-    const salesYen = (guests && drinkPricePerHeadYen) ? guests*drinkPricePerHeadYen : null;
+    const per = parseIntSafe($("evDrinkPrice").value);
+    const salesYen = (guests && per) ? guests*per : null;
 
     const ext = Math.max(0, parseIntSafe($("evExt").value) || 0);
     const durationMin = 90 + 30*ext;
@@ -859,9 +677,18 @@
 
     const now = new Date().toISOString();
     return {
-      version:2,
+      version:1,
       stage,
-      meta:{ date, guests:guests ?? null, drinkPricePerHeadYen: drinkPricePerHeadYen ?? null, salesYen, extensionCount:ext, durationMin, style, staff },
+      meta:{
+        date: $("evDate").value || todayISO(),
+        guests: guests ?? null,
+        drinkPricePerHeadYen: per ?? null,
+        salesYen,
+        extensionCount: ext,
+        durationMin,
+        style,
+        staff
+      },
       start10,
       end10,
       savedAt: now,
@@ -889,20 +716,15 @@
     draftDirty = false;
 
     initQtyMaps();
-    rebuildItemCaches();
-
-    buildProductsListIfNeeded(true);
-    recomputeAggAll();
-
     updateDurationUI();
     updateStageUI();
+    renderProducts();
     updateAllKpis();
     updateDraftInfoUI("適用");
   }
 
   function saveLocalDraftNow(){
-    const payload = buildDraftPayload();
-    localStorage.setItem(LOCAL_DRAFT_KEY, JSON.stringify(payload));
+    localStorage.setItem(LOCAL_DRAFT_KEY, JSON.stringify(buildDraftPayload()));
   }
   function loadLocalDraft(){
     const raw = localStorage.getItem(LOCAL_DRAFT_KEY);
@@ -911,26 +733,15 @@
   }
   function clearLocalDraft(){ localStorage.removeItem(LOCAL_DRAFT_KEY); }
 
-  // -----------------------
-  // Draft remote (docs)
-  // -----------------------
   async function loadRemoteDraft(){
-    const u = await getUser();
-    if(!u) return null;
-
     const { data, error } = await sb
       .from("docs")
       .select("payload, updated_at")
       .eq("kind", DRAFT_KIND)
-      .eq("doc_key", DRAFT_KEY)
+      .eq("doc_key", "active")
       .maybeSingle();
-
-    if(error){
-      log("loadRemoteDraft error", error);
-      return null;
-    }
+    if(error) { log("loadRemoteDraft error", error); return null; }
     if(!data) return null;
-
     draftServerUpdatedAt = data.updated_at || null;
     return data.payload || null;
   }
@@ -938,74 +749,36 @@
   async function saveRemoteDraftNow(){
     const u = await getUser();
     if(!u) return;
+    const payload = buildDraftPayload();
 
-    if(remoteInFlight) { pendingRemote = true; return; }
+    const { data, error } = await sb
+      .from("docs")
+      .upsert({ user_id:u.id, kind:DRAFT_KIND, doc_key:"active", payload }, { onConflict:"user_id,kind,doc_key" })
+      .select("updated_at")
+      .single();
 
-    const now = Date.now();
-    if(now - remoteLastSentAt < REMOTE_SAVE_MIN_INTERVAL_MS){
-      pendingRemote = true;
-      scheduleRemoteSave();
+    if(error){
+      log("saveRemoteDraft error", error);
+      updateDraftInfoUI("同期失敗（ローカル保存済み）");
       return;
     }
 
-    remoteInFlight = true;
-    try{
-      const payload = buildDraftPayload();
-      const { data, error } = await sb
-        .from("docs")
-        .upsert(
-          { user_id:u.id, kind:DRAFT_KIND, doc_key:DRAFT_KEY, payload },
-          { onConflict:"user_id,kind,doc_key" }
-        )
-        .select("updated_at")
-        .single();
-
-      if(error) throw error;
-
-      remoteLastSentAt = Date.now();
-      draftServerUpdatedAt = data?.updated_at || null;
-      draftSavedAt = payload.savedAt;
-      draftSavedBy = payload.savedBy;
-      draftDirty = false;
-      updateDraftInfoUI("同期済み");
-
-    }catch(e){
-      log("saveRemoteDraft failed", e);
-      updateDraftInfoUI("同期失敗（ローカル保存済み）");
-    }finally{
-      remoteInFlight = false;
-      if(pendingRemote){
-        pendingRemote = false;
-        scheduleRemoteSave();
-      }
-    }
+    draftSavedAt = payload.savedAt;
+    draftSavedBy = payload.savedBy;
+    draftServerUpdatedAt = data?.updated_at || null;
+    draftDirty = false;
+    saveLocalDraftNow();
+    updateDraftInfoUI("同期済み");
   }
 
   async function deleteRemoteDraft(){
-    const u = await getUser();
-    if(!u) return;
-    const { error } = await sb
-      .from("docs")
-      .delete()
-      .eq("kind", DRAFT_KIND)
-      .eq("doc_key", DRAFT_KEY);
-    if(error) log("deleteRemoteDraft error", error);
-  }
-
-  function scheduleRemoteSave(){
-    clearTimeout(remoteSaveTimer);
-    remoteSaveTimer = setTimeout(() => { saveRemoteDraftNow().catch(()=>{}); }, REMOTE_SAVE_DEBOUNCE_MS);
-  }
-  function scheduleLocalSave(){
-    clearTimeout(localSaveTimer);
-    localSaveTimer = setTimeout(() => { try{ saveLocalDraftNow(); }catch{} }, LOCAL_SAVE_DEBOUNCE_MS);
+    await sb.from("docs").delete().eq("kind", DRAFT_KIND).eq("doc_key","active");
   }
 
   function markDraftDirty(reason){
     draftDirty = true;
     updateDraftInfoUI(reason ? ("dirty:"+reason) : "dirty");
-    scheduleLocalSave();
-    scheduleRemoteSave();
+    saveLocalDraftNow();
   }
 
   function updateDraftInfoUI(extra){
@@ -1025,8 +798,21 @@
   }
 
   // -----------------------
-  // Stage UI + meta lock
+  // Meta + stage
   // -----------------------
+  function updateDurationUI(){
+    const ext = Math.max(0, parseIntSafe($("evExt").value) || 0);
+    $("evDuration").textContent = `${90 + 30*ext}分`;
+  }
+
+  function getDraftSalesYen(){
+    const guests = parseIntSafe($("evGuests").value);
+    const per = parseIntSafe($("evDrinkPrice").value);
+    if(!guests || guests<=0) return null;
+    if(!per || per<=0) return null;
+    return guests*per;
+  }
+
   function updateStageUI(){
     $("stageLabel").textContent = (stage==="start") ? "④開始入力" : "⑦終了入力";
     $("btnStageStart").classList.toggle("active", stage==="start");
@@ -1036,13 +822,12 @@
     $("btnBackToStart").style.display = (stage==="end") ? "" : "none";
     $("btnFinishEvent").style.display = (stage==="end") ? "" : "none";
 
-    $("btnAutofillMin").style.display = (stage==="start") ? "" : "none";
     $("productsHint").textContent = (stage==="start")
       ? "開始モード：④商品入力 → ⑥開始確定（⑤同期OK）"
       : "終了モード：開始は固定。⑦終了入力 → ⑧宴会保存";
 
     const lockMeta = (stage==="end");
-    ["evDate","evGuests","evDrinkPrice","evExt","evStyle","evStaff"].forEach(id => { const el = $(id); if(el) el.disabled = lockMeta; });
+    ["evDate","evGuests","evDrinkPrice","evExt","evStyle","evStaff"].forEach(id => { $(id).disabled = lockMeta; });
     $("btnUnlockMeta").style.display = lockMeta ? "" : "none";
     $("btnMetaReset").disabled = lockMeta;
 
@@ -1052,251 +837,192 @@
   }
 
   // -----------------------
-  // ✅ 商品DOM：差分更新
+  // Calc / KPIs
   // -----------------------
-  function buildProductsListIfNeeded(force){
+  function calcAgg(){
+    let total = 0;
+    let usedItemCount = 0;
+    let missingEnds = 0;
+    let negativeCount = 0;
+
+    for(const it of (master.items||[])){
+      const s10 = start10[it.id] || 0;
+      const e10 = end10[it.id];
+      if(s10>0 && (e10===null || e10===undefined)) missingEnds++;
+
+      if(e10===null || e10===undefined) continue;
+      const used10 = s10 - e10;
+      if(used10 < 0) negativeCount++;
+      const used = used10/10;
+      if(used>0){
+        usedItemCount++;
+        total += Math.round(used * Number(it.costYen||0));
+      }
+    }
+    return { total, usedItemCount, missingEnds, negativeCount };
+  }
+
+  function updateAllKpis(){
+    const a = calcAgg();
+    $("kpiThisCost").textContent = yen(a.total);
+    $("kpiThisItems").textContent = String(a.usedItemCount);
+
+    const extraNeg = a.negativeCount ? ` / 増加疑い ${a.negativeCount}` : "";
+    $("kpiMissingEnds").textContent = `未入力 ${a.missingEnds}` + extraNeg;
+
+    const sales = getDraftSalesYen();
+    if(sales !== null){
+      $("kpiThisSales").textContent = yen(sales);
+      $("kpiThisCostRate").textContent = pct(a.total / sales);
+      $("kpiSalesHint").textContent = "—";
+    }else{
+      $("kpiThisSales").textContent = "—";
+      $("kpiThisCostRate").textContent = "—";
+      $("kpiSalesHint").textContent = "人数と単価を入れると計算";
+    }
+
+    $("kpiThisStatus").textContent =
+      (stage === "start") ? "状態：④開始入力中" : (a.missingEnds===0 ? "状態：確定（⑧保存可）" : "状態：未確定（終了未入力あり）");
+
+    updateDraftInfoUI("");
+  }
+
+  // -----------------------
+  // Products render
+  // -----------------------
+  function renderProducts(){
     const items = master.items || [];
     $("noProducts").style.display = items.length ? "none" : "";
 
-    if(!force && productsBuiltForStage === stage && productRowElById.size === items.length){
-      return;
-    }
-
-    // 全再構築（stage切替/マスタ変更時のみ）
     const box = $("products");
     box.innerHTML = "";
-    productRowElById = new Map();
-
-    const frag = document.createDocumentFragment();
 
     for(const it of items){
       if(start10[it.id]===undefined) start10[it.id]=0;
       if(end10[it.id]===undefined) end10[it.id]=null;
 
+      const s10 = start10[it.id] || 0;
+      const e10 = end10[it.id];
+      const used10 = (e10===null || e10===undefined) ? null : (s10 - e10);
+      const usedText = (used10===null) ? "—" : (used10/10).toFixed(1);
+      const usedClass = (used10===null) ? "missing" : (used10<0 ? "negative" : "");
+
       const row = document.createElement("div");
       row.className = "prodRow";
-      row.dataset.itemid = it.id;
-
-      row.innerHTML = renderProductRowHTML(it);
-      frag.appendChild(row);
-      productRowElById.set(it.id, row);
-    }
-
-    box.appendChild(frag);
-    productsBuiltForStage = stage;
-
-    // クリック/変更は1つのハンドラでまとめる（イベントデリゲーション）
-    box.onclick = onProductsClick;
-    box.onchange = onProductsChange;
-  }
-
-  function renderProductRowHTML(it){
-    const id = it.id;
-    const s10 = start10[id] || 0;
-    const e10 = end10[id];
-    const used10 = (e10===null || e10===undefined) ? null : (s10 - e10);
-    const usedText = (used10===null) ? "—" : (used10/10).toFixed(1);
-    const usedClass = (used10===null) ? "missing" : (used10<0 ? "negative" : "");
-    const min10 = min10ById.get(id);
-
-    const shortage = (min10!==null && min10!==undefined && min10>0) ? (s10 < min10) : false;
-    const badge = shortage
-      ? `<span class="badge warn" data-role="badge">⚠ 不足</span>`
-      : (min10!==null && min10!==undefined && min10>0 ? `<span class="badge" data-role="badge">目安OK</span>` : `<span class="badge" data-role="badge">目安なし</span>`);
-
-    const minText = (min10!==null && min10!==undefined && min10>0)
-      ? `${(min10/10).toFixed(1)}${escapeHtml(it.unit||"本")}`
-      : `—`;
-
-    const lineCost = (itemStatsById.get(id)?.lineCost ?? computeItemStats(id).lineCost);
-
-    const startBox = (stage==="start")
-      ? `
-        <div class="ctrlBox startBox startArea">
-          <div class="ctrlTitle"><span>開始（入力）</span><span class="mono" data-role="startDisp">${(s10/10).toFixed(1)}</span></div>
-          <div class="ctrlGrid">
-            <div class="stepBtn" data-act="step" data-field="start" data-step="-10">−1</div>
-            <div class="stepBtn" data-act="step" data-field="start" data-step="-1">−0.1</div>
-            <input class="qtyInput" data-role="startInput" inputmode="decimal" value="${(s10/10).toFixed(1)}" />
-            <div class="stepBtn primary" data-act="step" data-field="start" data-step="1">+0.1</div>
-            <div class="stepBtn primary" data-act="step" data-field="start" data-step="10">+1</div>
+      row.innerHTML = `
+        <div>
+          <div class="prodName">${escapeHtml(it.name)}</div>
+          <div class="prodMeta">
+            単価 ${yen(Number(it.costYen||0))} / 単位 ${escapeHtml(it.unit||"本")}
           </div>
         </div>
-      `
-      : `
-        <div class="ctrlBox startBox startArea readonly">
-          <div class="ctrlTitle"><span>開始（固定）</span><span class="mono" data-role="startDisp">${(s10/10).toFixed(1)}</span></div>
-          <div class="roQty mono" data-role="startRO">${(s10/10).toFixed(1)}</div>
-          <div class="small">開始は変更できません</div>
-        </div>
-      `;
 
-    const endBox = (stage==="end")
-      ? `
-        <div class="ctrlBox endBox endArea">
-          <div class="ctrlTitle"><span>終了（入力）</span><span class="mono" data-role="endDisp">${(e10===null || e10===undefined) ? "—" : (e10/10).toFixed(1)}</span></div>
-          <div class="ctrlGrid">
-            <div class="stepBtn" data-act="step" data-field="end" data-step="-10">−1</div>
-            <div class="stepBtn" data-act="step" data-field="end" data-step="-1">−0.1</div>
-            <input class="qtyInput" data-role="endInput" inputmode="decimal" value="${(e10===null || e10===undefined) ? "" : (e10/10).toFixed(1)}" placeholder="—" />
-            <div class="stepBtn primary" data-act="step" data-field="end" data-step="1">+0.1</div>
-            <div class="stepBtn primary" data-act="step" data-field="end" data-step="10">+1</div>
+        <div class="controls" data-itemid="${escapeHtml(it.id)}">
+          ${
+            stage==="start"
+            ? `
+              <div class="ctrlBox startBox">
+                <div class="ctrlTitle"><span>開始（入力）</span><span class="mono">${(s10/10).toFixed(1)}</span></div>
+                <div class="ctrlGrid">
+                  <div class="stepBtn" data-act="step" data-field="start" data-step="-10">−1</div>
+                  <div class="stepBtn" data-act="step" data-field="start" data-step="-1">−0.1</div>
+                  <input class="qtyInput" data-role="startInput" inputmode="decimal" value="${(s10/10).toFixed(1)}" />
+                  <div class="stepBtn primary" data-act="step" data-field="start" data-step="1">+0.1</div>
+                  <div class="stepBtn primary" data-act="step" data-field="start" data-step="10">+1</div>
+                </div>
+              </div>
+            `
+            : `
+              <div class="ctrlBox startBox readonly">
+                <div class="ctrlTitle"><span>開始（固定）</span><span class="mono">${(s10/10).toFixed(1)}</span></div>
+                <div class="roQty mono">${(s10/10).toFixed(1)}</div>
+                <div class="small">開始は変更できません</div>
+              </div>
+            `
+          }
+
+          ${
+            stage==="end"
+            ? `
+              <div class="ctrlBox endBox">
+                <div class="ctrlTitle"><span>終了（入力）</span><span class="mono">${(e10===null || e10===undefined) ? "—" : (e10/10).toFixed(1)}</span></div>
+                <div class="ctrlGrid">
+                  <div class="stepBtn" data-act="step" data-field="end" data-step="-10">−1</div>
+                  <div class="stepBtn" data-act="step" data-field="end" data-step="-1">−0.1</div>
+                  <input class="qtyInput" data-role="endInput" inputmode="decimal" value="${(e10===null || e10===undefined) ? "" : (e10/10).toFixed(1)}" placeholder="—" />
+                  <div class="stepBtn primary" data-act="step" data-field="end" data-step="1">+0.1</div>
+                  <div class="stepBtn primary" data-act="step" data-field="end" data-step="10">+1</div>
+                </div>
+              </div>
+            `
+            : `
+              <div class="ctrlBox endBox readonly">
+                <div class="ctrlTitle"><span>終了（後で）</span><span class="mono">—</span></div>
+                <div class="roQty mono">—</div>
+                <div class="small">⑥開始確定後に入力します</div>
+              </div>
+            `
+          }
+
+          <div class="usedBox">
+            <div class="usedLine">使用（開始−終了）</div>
+            <div class="usedVal ${usedClass} mono">${usedText}</div>
           </div>
         </div>
-      `
-      : `
-        <div class="ctrlBox endBox endArea readonly">
-          <div class="ctrlTitle"><span>終了（後で）</span><span class="mono" data-role="endDisp">—</span></div>
-          <div class="roQty mono" data-role="endRO">—</div>
-          <div class="small">⑥開始確定後に入力します</div>
-        </div>
       `;
-
-    return `
-      <div>
-        <div class="prodName">${escapeHtml(it.name)}</div>
-        <div class="prodMeta">
-          最低用意 ${escapeHtml(minText)} / 単価 ${yen(Number(it.costYen||0))} / 単位 ${escapeHtml(it.unit||"本")}
-          &nbsp; ${badge}
-        </div>
-      </div>
-
-      <div class="controls" data-itemid="${escapeHtml(id)}">
-        ${startBox}
-        ${endBox}
-        <div class="usedBox usedArea">
-          <div class="usedLine">使用（開始−終了）</div>
-          <div class="usedVal ${usedClass} mono" data-role="usedDisp">${usedText}</div>
-          <div class="usedLine">原価：<span class="mono" data-role="costDisp">${yen(lineCost)}</span></div>
-        </div>
-      </div>
-    `;
-  }
-
-  function updateProductRow(itemId){
-    const row = productRowElById.get(itemId);
-    if(!row) return;
-    const it = itemsById.get(itemId);
-    if(!it) return;
-
-    const s10 = start10[itemId] || 0;
-    const e10 = end10[itemId];
-    const used10 = (e10===null || e10===undefined) ? null : (s10 - e10);
-    const usedText = (used10===null) ? "—" : (used10/10).toFixed(1);
-    const usedClass = (used10===null) ? "missing" : (used10<0 ? "negative" : "");
-
-    // displays
-    const startDisp = row.querySelector('[data-role="startDisp"]');
-    if(startDisp) startDisp.textContent = (s10/10).toFixed(1);
-
-    const startInput = row.querySelector('[data-role="startInput"]');
-    if(startInput) startInput.value = (s10/10).toFixed(1);
-
-    const startRO = row.querySelector('[data-role="startRO"]');
-    if(startRO) startRO.textContent = (s10/10).toFixed(1);
-
-    const endDisp = row.querySelector('[data-role="endDisp"]');
-    if(endDisp) endDisp.textContent = (e10===null || e10===undefined) ? "—" : (e10/10).toFixed(1);
-
-    const endInput = row.querySelector('[data-role="endInput"]');
-    if(endInput && stage==="end"){
-      endInput.value = (e10===null || e10===undefined) ? "" : (e10/10).toFixed(1);
+      box.appendChild(row);
     }
 
-    const endRO = row.querySelector('[data-role="endRO"]');
-    if(endRO && stage!=="end") endRO.textContent = "—";
+    // Event delegation
+    box.onclick = (ev) => {
+      if(mustReload) return;
+      const btn = ev.target.closest('[data-act="step"]');
+      if(!btn) return;
+      const ctrl = btn.closest(".controls");
+      const itemId = ctrl.getAttribute("data-itemid");
+      const step = parseInt(btn.getAttribute("data-step"),10) || 0;
+      const field = btn.getAttribute("data-field");
 
-    const usedDisp = row.querySelector('[data-role="usedDisp"]');
-    if(usedDisp){
-      usedDisp.textContent = usedText;
-      usedDisp.classList.remove("missing","negative");
-      if(usedClass) usedDisp.classList.add(usedClass);
-    }
-
-    const costDisp = row.querySelector('[data-role="costDisp"]');
-    if(costDisp){
-      const lineCost = itemStatsById.get(itemId)?.lineCost ?? 0;
-      costDisp.textContent = yen(lineCost);
-    }
-
-    // badge
-    const badgeEl = row.querySelector('[data-role="badge"]');
-    const min10 = min10ById.get(itemId);
-    const shortage = (min10!==null && min10!==undefined && min10>0) ? (s10 < min10) : false;
-    if(badgeEl){
-      badgeEl.classList.remove("warn");
-      if(shortage){
-        badgeEl.classList.add("warn");
-        badgeEl.textContent = "⚠ 不足";
-      }else{
-        badgeEl.textContent = (min10!==null && min10!==undefined && min10>0) ? "目安OK" : "目安なし";
+      if(field==="start"){
+        if(stage!=="start") return;
+        start10[itemId] = Math.max(0, (start10[itemId]||0) + step);
+      }else if(field==="end"){
+        if(stage!=="end") return;
+        const now = (end10[itemId]===null || end10[itemId]===undefined) ? 0 : (end10[itemId]||0);
+        end10[itemId] = Math.max(0, now + step);
       }
-    }
-  }
+      renderProducts();
+      updateAllKpis();
+      markDraftDirty("step");
+    };
 
-  function onProductsClick(ev){
-    if(mustReload) return;
-    const btn = ev.target.closest('[data-act="step"]');
-    if(!btn) return;
+    box.onchange = (ev) => {
+      if(mustReload) return;
+      const inp = ev.target.closest(".qtyInput");
+      if(!inp) return;
+      const ctrl = inp.closest(".controls");
+      const itemId = ctrl.getAttribute("data-itemid");
 
-    const ctrl = btn.closest(".controls");
-    if(!ctrl) return;
-    const itemId = ctrl.getAttribute("data-itemid");
-    const step = parseInt(btn.getAttribute("data-step"),10) || 0;
-    const field = btn.getAttribute("data-field");
+      const isStart = inp.getAttribute("data-role")==="startInput";
+      const isEnd   = inp.getAttribute("data-role")==="endInput";
+      const val = (inp.value||"").trim();
 
-    if(field==="start"){
-      if(stage!=="start") return;
-      const prev = start10[itemId] || 0;
-      start10[itemId] = Math.max(0, prev + step);
-    }else if(field==="end"){
-      if(stage!=="end") return;
-      const now = (end10[itemId]===null || end10[itemId]===undefined) ? 0 : (end10[itemId]||0);
-      end10[itemId] = Math.max(0, now + step);
-    }else{
-      return;
-    }
-
-    // ✅ 増分集計＆行だけ更新
-    updateAggForItem(itemId);
-    updateProductRow(itemId);
-    updateAllKpis();
-    markDraftDirty("step");
-  }
-
-  function onProductsChange(ev){
-    if(mustReload) return;
-    const inp = ev.target.closest(".qtyInput");
-    if(!inp) return;
-
-    const ctrl = inp.closest(".controls");
-    if(!ctrl) return;
-    const itemId = ctrl.getAttribute("data-itemid");
-    const roleStart = inp.getAttribute("data-role")==="startInput";
-    const roleEnd = inp.getAttribute("data-role")==="endInput";
-
-    const val = (inp.value||"").trim();
-
-    if(roleStart){
-      if(stage!=="start") return;
-      const n = parseNumberSafe(val);
-      start10[itemId] = Math.max(0, to10(n||0));
-    }else if(roleEnd){
-      if(stage!=="end") return;
-      if(val===""){
-        end10[itemId] = null;
-      }else{
+      if(isStart){
+        if(stage!=="start") return;
         const n = parseNumberSafe(val);
-        end10[itemId] = Math.max(0, to10(n||0));
+        start10[itemId] = Math.max(0, to10(n||0));
+      }else if(isEnd){
+        if(stage!=="end") return;
+        if(val==="") end10[itemId] = null;
+        else{
+          const n = parseNumberSafe(val);
+          end10[itemId] = Math.max(0, to10(n||0));
+        }
       }
-    }else{
-      return;
-    }
-
-    updateAggForItem(itemId);
-    updateProductRow(itemId);
-    updateAllKpis();
-    markDraftDirty("input");
+      renderProducts();
+      updateAllKpis();
+      markDraftDirty("input");
+    };
   }
 
   // -----------------------
@@ -1309,93 +1035,40 @@
     $("noMaster").style.display = items.length ? "none" : "";
 
     for(const it of items){
-      const minQty = (it.minQty===null || it.minQty===undefined) ? null : Number(it.minQty);
-      const minText = (minQty!==null && Number.isFinite(minQty) && minQty>0) ? `${minQty.toFixed(1)}${escapeHtml(it.unit||"本")}` : "—";
-
       const el = document.createElement("div");
       el.className = "item";
       el.innerHTML = `
         <div class="itemHeader">
           <div>
             <h3>${escapeHtml(it.name)}</h3>
-            <div class="small">${escapeHtml(it.category||"")}${it.category ? " / " : ""}${escapeHtml(it.note||"")}</div>
-            <div class="small">単位：${escapeHtml(it.unit||"本")} / 単価：<span class="mono">${yen(Number(it.costYen||0))}</span> / 最低用意：<span class="mono">${minText}</span></div>
+            <div class="small">単位：${escapeHtml(it.unit||"本")} / 単価：<span class="mono">${yen(Number(it.costYen||0))}</span></div>
           </div>
           <div><span class="badge">ID: ${escapeHtml(it.id)}</span></div>
         </div>
         <div class="btnbar">
-          <button data-act="edit" type="button">編集</button>
           <button class="danger" data-act="del" type="button">削除</button>
         </div>
       `;
-
       el.querySelector('[data-act="del"]').addEventListener("click", () => {
         if(mustReload) return alert("②再読み込みが完了するまで操作できません。");
-        if(!confirm(`「${it.name}」をマスタから削除しますか？`)) return;
-
+        if(!confirm(`「${it.name}」を削除しますか？`)) return;
         master.items = master.items.filter(x => x.id !== it.id);
         delete start10[it.id];
         delete end10[it.id];
-
-        rebuildItemCaches();
         initQtyMaps();
-        buildProductsListIfNeeded(true);
-        recomputeAggAll();
-        updateAllKpis();
-
         renderMaster();
+        renderProducts();
+        updateAllKpis();
         markDraftDirty("master del");
       });
-
-      el.querySelector('[data-act="edit"]').addEventListener("click", () => {
-        if(mustReload) return alert("②再読み込みが完了するまで操作できません。");
-        const name = prompt("商品名", it.name);
-        if(name===null) return;
-        const unit = prompt("単位（例：本/樽/缶）", it.unit || "本");
-        if(unit===null) return;
-        const cost = prompt("仕入単価（円/1単位）", String(it.costYen ?? ""));
-        if(cost===null) return;
-
-        const costYen = parseNumberSafe(cost);
-        if(costYen===null || costYen<0) return alert("単価が不正です");
-
-        const min = prompt("最低用意数（本）※0.1刻みOK、空欄で未設定", (it.minQty ?? "") === null ? "" : String(it.minQty ?? ""));
-        if(min===null) return;
-        let minQty2 = null;
-        if(String(min).trim()!==""){
-          const n = parseNumberSafe(min);
-          if(n===null || n<0) return alert("最低用意数が不正です");
-          minQty2 = Number(n.toFixed(1));
-        }
-
-        it.name = name.trim() || it.name;
-        it.unit = (unit.trim() || "本");
-        it.costYen = Math.round(costYen);
-        it.minQty = minQty2;
-
-        it.category = (prompt("カテゴリ（任意）", it.category || "") ?? it.category);
-        it.note = (prompt("備考（任意）", it.note || "") ?? it.note);
-
-        rebuildItemCaches();
-        buildProductsListIfNeeded(true);
-        recomputeAggAll();
-        updateAllKpis();
-
-        renderMaster();
-        markDraftDirty("master edit");
-      });
-
       box.appendChild(el);
     }
   }
 
   // -----------------------
-  // Events load/render (Realtime差分更新)
+  // Events load/render + delete (2-step)
   // -----------------------
   async function loadEvents(){
-    const u = await getUser();
-    if(!u) return;
-
     const { data, error } = await sb
       .from("docs")
       .select("doc_key, payload, created_at, updated_at")
@@ -1403,15 +1076,36 @@
       .order("created_at",{ ascending:false })
       .limit(400);
 
+    if(error){ log("loadEvents error", error); return; }
+    events = data || [];
+    $("eventsCount").textContent = String(events.length);
+    renderEvents();
+  }
+
+  function disarmEventDelete(){
+    armedDeleteEventKey = null;
+    clearTimeout(armedDeleteTimer);
+    armedDeleteTimer = null;
+  }
+
+  async function deleteEvent(docKey){
+    const u = await getUser();
+    if(!u) return alert("先にログインして");
+
+    const { error } = await sb
+      .from("docs")
+      .delete()
+      .eq("kind","event")
+      .eq("doc_key", docKey)
+      .eq("user_id", u.id);
+
     if(error){
-      log("loadEvents error", error);
-      return;
+      log("deleteEvent error", error);
+      return alert("削除に失敗: " + error.message);
     }
 
-    events = data || [];
-    eventsByKey = new Map();
-    for(const r of events) eventsByKey.set(r.doc_key, r);
-
+    // ローカルからも除外（Realtimeが来てもOK）
+    events = events.filter(e => e.doc_key !== docKey);
     $("eventsCount").textContent = String(events.length);
     renderEvents();
   }
@@ -1458,6 +1152,10 @@
 
       const badge = isComplete ? `<span class="badge">確定</span>` : `<span class="badge warn">未確定（未入力${missingEnds}）</span>`;
 
+      const armed = (armedDeleteEventKey === e.doc_key);
+      const delText = armed ? "もう一度で完全削除" : "削除";
+      const delClass = armed ? "danger" : "ghost";
+
       const el = document.createElement("div");
       el.className = "item";
       el.innerHTML = `
@@ -1470,10 +1168,35 @@
               / 原価：<span class="mono">${yen(cost)}</span>
               / 原価率：<span class="mono">${rate===null ? "—" : pct(rate)}</span>
             </div>
+            <div class="small mono">key: ${escapeHtml(e.doc_key)}</div>
           </div>
-          <div><span class="badge">updated: ${escapeHtml(e.updated_at||"-")}</span></div>
+          <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
+            <span class="badge">updated: ${escapeHtml(e.updated_at||"-")}</span>
+            <button data-act="delEvent" data-key="${escapeHtml(e.doc_key)}" class="${delClass}" type="button">${delText}</button>
+          </div>
         </div>
+        ${armed ? `<div class="small" style="margin-top:8px;color:var(--warn);">⚠ 7秒以内にもう一度押すと削除します（取り消し不可）</div>` : ``}
       `;
+
+      el.querySelector('[data-act="delEvent"]').addEventListener("click", async () => {
+        if(mustReload) return alert("②再読み込みが完了するまで操作できません。");
+
+        const key = e.doc_key;
+        if(armedDeleteEventKey !== key){
+          disarmEventDelete();
+          armedDeleteEventKey = key;
+          armedDeleteTimer = setTimeout(() => { disarmEventDelete(); renderEvents(); }, 7000);
+          renderEvents();
+          return;
+        }
+
+        // 2段階目：最終確認
+        disarmEventDelete();
+        renderEvents();
+        if(!confirm("この宴会データをSupabaseから完全削除します。\n取り消しできません。よろしいですか？")) return;
+        await deleteEvent(key);
+      });
+
       box.appendChild(el);
     }
 
@@ -1485,67 +1208,21 @@
   }
 
   // -----------------------
-  // Autofill min (start)
-  // -----------------------
-  function applyMinToAllStarts(){
-    if(mustReload) return alert("②再読み込みが完了するまで操作できません。");
-    if(stage!=="start") return alert("目安一括入力は「④開始入力」モードで使えます。");
-    const items = master.items || [];
-    if(!items.length) return alert("商品マスタが空です。");
-
-    const targets = items.filter(it => {
-      const min10 = min10ById.get(it.id);
-      return (min10!==null && min10!==undefined && min10>0);
-    });
-
-    if(!targets.length) return alert("マスタの「最低用意数（目安）」が設定された商品がありません。");
-    if(!confirm(`マスタの目安まで開始在庫を一括入力します。\n対象：${targets.length}品\n（対象商品の開始入力は上書き）\nよろしいですか？`)) return;
-
-    for(const it of targets){
-      start10[it.id] = min10ById.get(it.id);
-      updateAggForItem(it.id);
-      updateProductRow(it.id);
-    }
-
-    updateAllKpis();
-    markDraftDirty("autofill");
-    alert("目安まで一括入力しました（開始）。");
-  }
-
-  // -----------------------
   // Flow actions
   // -----------------------
-  function warnStartBelowMin(){
-    const items = master.items || [];
-    const shortages = [];
-    for(const it of items){
-      const min10 = min10ById.get(it.id);
-      if(!min10) continue;
-      const s = start10[it.id] || 0;
-      if(s < min10) shortages.push({ name:it.name, start:(s/10), min:(min10/10) });
-    }
-    if(!shortages.length) return true;
-    const show = shortages.slice(0,8).map(x => `・${x.name}（開始${x.start.toFixed(1)} < 目安${x.min.toFixed(1)}）`).join("\n");
-    const more = shortages.length>8 ? `\n…他 ${shortages.length-8} 件` : "";
-    return confirm(`【警告】目安より開始在庫が少ない品があります。\n\n${show}${more}\n\nそれでも⑥開始確定しますか？`);
-  }
-
   function setStageStart(){
     stage = "start";
     for(const it of (master.items||[])) end10[it.id] = null;
-    buildProductsListIfNeeded(true); // stage依存UIなので全再構築
-    recomputeAggAll();
     updateStageUI();
+    renderProducts();
     updateAllKpis();
     markDraftDirty("stage start");
   }
-
   function setStageEnd(){
     stage = "end";
     for(const it of (master.items||[])) if(end10[it.id]===undefined) end10[it.id] = null;
-    buildProductsListIfNeeded(true);
-    recomputeAggAll();
     updateStageUI();
+    renderProducts();
     updateAllKpis();
     markDraftDirty("stage end");
   }
@@ -1554,7 +1231,6 @@
     if(mustReload) return alert("②再読み込みが完了するまで操作できません。");
     if(!master.items?.length) return alert("商品マスタが空です。先に登録してください。");
     if(!$("evDate").value) $("evDate").value = todayISO();
-    if(!warnStartBelowMin()) return;
     setStageEnd();
     alert("⑥開始を確定しました。次は⑦終了入力です。");
   }
@@ -1565,33 +1241,31 @@
     setStageStart();
   }
 
-  // ✅ event保存payloadを縮小：触った/使った商品だけ保存
-  function buildEventLinesCompact(){
-    const lines = [];
-    for(const it of (master.items||[])){
-      const s = start10[it.id] || 0;
-      const e = end10[it.id];
-      const touched = (s>0) || !(e===null || e===undefined);
-      if(!touched) continue;
+  function buildEventPayload(){
+    const a = calcAgg();
+    const guests = parseIntSafe($("evGuests").value);
+    const per = parseIntSafe($("evDrinkPrice").value);
+    const salesYen = (guests && per) ? guests*per : null;
 
-      const used10 = (e===null || e===undefined) ? null : (s - e);
-      const used = (used10===null) ? null : (used10/10);
-      const costYen = costYenById.get(it.id) || 0;
-      const lineCostYen = (used!==null && used>0) ? Math.round(used * costYen) : 0;
+    const ext = Math.max(0, parseIntSafe($("evExt").value) || 0);
+    const durationMin = 90 + 30*ext;
 
-      lines.push({
-        id: it.id,
-        name: it.name,
-        unit: it.unit || "本",
-        costYen,
-        minQty: (it.minQty ?? null),
-        start: s/10,
-        end: (e===null || e===undefined) ? null : (e/10),
-        used,
-        lineCostYen
-      });
-    }
-    return lines;
+    return {
+      version:1,
+      date: $("evDate").value || todayISO(),
+      guests: guests ?? null,
+      drinkPricePerHeadYen: per ?? null,
+      salesYen,
+      extensionCount: ext,
+      durationMin,
+      style: $("evStyle").value || "seated",
+      staff: ($("evStaff").value||"").split(",").map(s=>s.trim()).filter(Boolean).slice(0,2),
+      totalCostYen: Math.round(a.total),
+      usedItemCount: a.usedItemCount,
+      missingEnds: a.missingEnds,
+      negativeCount: a.negativeCount,
+      isComplete: (a.missingEnds===0)
+    };
   }
 
   async function finishEvent(){
@@ -1600,51 +1274,22 @@
     const u = await getUser();
     if(!u) return alert("先にログインして");
 
-    const mSales = getDraftSalesYen();
-    const m = {
-      date: $("evDate").value || todayISO(),
-      guests: parseIntSafe($("evGuests").value),
-      drinkPricePerHeadYen: parseIntSafe($("evDrinkPrice").value),
-      salesYen: mSales,
-      extensionCount: Math.max(0, parseIntSafe($("evExt").value) || 0),
-      durationMin: Number(($("evDuration").textContent||"90").replace(/[^\d]/g,"")) || 90,
-      style: $("evStyle").value || "seated",
-      staff: ($("evStaff").value||"").split(",").map(s=>s.trim()).filter(Boolean).slice(0,2)
-    };
-
-    if(agg.missingEnds>0){
-      if(!confirm(`終了未入力が ${agg.missingEnds} 件あります。\n未確定として保存しますか？`)) return;
+    const payload = buildEventPayload();
+    if(payload.missingEnds>0){
+      if(!confirm(`終了未入力が ${payload.missingEnds} 件あります。\n未確定として保存しますか？`)) return;
     }
-
-    const payload = {
-      version:2,
-      date: m.date,
-      guests: m.guests ?? null,
-      drinkPricePerHeadYen: m.drinkPricePerHeadYen ?? null,
-      salesYen: m.salesYen ?? null,
-      extensionCount: m.extensionCount,
-      durationMin: m.durationMin,
-      style: m.style,
-      staff: m.staff,
-      totalCostYen: Math.round(agg.total),
-      usedItemCount: agg.usedItemCount,
-      missingEnds: agg.missingEnds,
-      negativeCount: agg.negativeCount,
-      isComplete: (agg.missingEnds===0),
-      lines: buildEventLinesCompact()
-    };
 
     const docKey = crypto.randomUUID ? crypto.randomUUID() : (Date.now()+"");
     const { error } = await sb.from("docs").insert({ user_id:u.id, kind:"event", doc_key:docKey, payload });
     if(error){
-      log("finishEvent insert error", error);
+      log("finishEvent error", error);
       return alert("保存エラー: " + error.message);
     }
 
     await deleteRemoteDraft();
     clearLocalDraft();
 
-    // 新規開始状態へ
+    // 次の宴会へ初期化
     stage = "start";
     $("evDate").value = todayISO();
     $("evGuests").value = "";
@@ -1662,13 +1307,13 @@
     draftServerUpdatedAt = null;
     draftDirty = false;
 
-    buildProductsListIfNeeded(true);
-    recomputeAggAll();
     updateDurationUI();
     updateStageUI();
+    renderProducts();
     updateAllKpis();
+    await loadEvents();
 
-    alert("⑧宴会を保存しました（一覧に追加）。");
+    alert("⑧宴会を保存しました。");
   }
 
   // -----------------------
@@ -1743,16 +1388,15 @@
     draftServerUpdatedAt = null;
     draftDirty = false;
 
-    buildProductsListIfNeeded(true);
-    recomputeAggAll();
     updateDurationUI();
     updateStageUI();
+    renderProducts();
     updateAllKpis();
     updateDraftInfoUI("削除済み");
   }
 
   // -----------------------
-  // ✅ Realtime：filterは user_id のみにしてkindで分岐（安全）
+  // Realtime（最低限）
   // -----------------------
   function stopRealtime(){
     if(rtChannel){
@@ -1762,43 +1406,12 @@
     $("rtState").textContent = "OFF";
   }
 
-  function upsertEventRow(row){
-    if(!row || !row.doc_key) return;
-    const key = row.doc_key;
-
-    const existed = eventsByKey.get(key);
-    eventsByKey.set(key, row);
-
-    if(existed){
-      const idx = events.findIndex(x => x.doc_key === key);
-      if(idx>=0) events[idx] = row;
-    }else{
-      events.unshift(row);
-    }
-
-    // created_at descを維持（軽量な範囲で）
-    events.sort((a,b) => (b.created_at||"").localeCompare(a.created_at||""));
-    if(events.length > 400) events = events.slice(0,400);
-
-    $("eventsCount").textContent = String(events.length);
-    renderEvents();
-  }
-
-  function deleteEventRow(doc_key){
-    if(!doc_key) return;
-    eventsByKey.delete(doc_key);
-    events = events.filter(x => x.doc_key !== doc_key);
-    $("eventsCount").textContent = String(events.length);
-    renderEvents();
-  }
-
   async function startRealtime(){
     stopRealtime();
     const u = await getUser();
     if(!u) return;
 
-    rtChannel = sb.channel("docs-rt-j");
-
+    rtChannel = sb.channel("docs-rt-k");
     rtChannel.on("postgres_changes", {
       event:"*",
       schema:"public",
@@ -1809,40 +1422,21 @@
 
       const n = payload.new || null;
       const o = payload.old || null;
-
       const kind = (n && n.kind) ? n.kind : (o && o.kind) ? o.kind : null;
-      const docKey = (n && n.doc_key) ? n.doc_key : (o && o.doc_key) ? o.doc_key : null;
+      const key  = (n && n.doc_key) ? n.doc_key : (o && o.doc_key) ? o.doc_key : null;
 
-      // master
-      if(kind==="master" && docKey==="main"){
-        await loadMaster(); // masterは丸ごと適用（安全）
-        log("RT master applied", payload);
+      if(kind==="master" && key==="main"){
+        await loadMaster();
         return;
       }
-
-      // draft（自分の保存ループ回避のため、サーバ更新が来たら適用）
-      if(kind===DRAFT_KIND && docKey===DRAFT_KEY){
+      if(kind===DRAFT_KIND && key==="active"){
         const remote = await loadRemoteDraft();
         if(remote) applyDraftPayload(remote);
-        log("RT draft applied", payload);
         return;
       }
-
-      // event：差分更新（loadEventsしない）
       if(kind==="event"){
-        if(payload.eventType === "DELETE"){
-          deleteEventRow(docKey);
-          log("RT event deleted", payload);
-        }else{
-          // INSERT/UPDATE
-          upsertEventRow({
-            doc_key: n.doc_key,
-            payload: n.payload,
-            created_at: n.created_at,
-            updated_at: n.updated_at
-          });
-          log("RT event upsert", payload);
-        }
+        // 一覧はシンプルに再取得（削除反映確実）
+        await loadEvents();
         return;
       }
     });
@@ -1852,68 +1446,72 @@
   }
 
   // -----------------------
-  // ②再読み込み：master + draft + events + realtime
+  // ★②再読み込み（自動実行）
   // -----------------------
   async function reloadAll(){
     const u = await refreshAuthState();
-    if(!u) return alert("先にログインして");
+    if(!u) return;
 
-    setReloadBusy(true, "再読み込み中… master/draft/events");
+    setMustReload(true);
+    setReloadBusy(true, "②再読み込み中…（master / draft / events）");
+
     try{
       await loadMaster();
       await loadEvents();
 
       const remote = await loadRemoteDraft();
-      if(remote){
-        applyDraftPayload(remote);
-      }else{
+      if(remote) applyDraftPayload(remote);
+      else{
         const local = loadLocalDraft();
         if(local) applyDraftPayload(local);
         else{
+          // 初期
           $("evDate").value = todayISO();
           $("evExt").value = "0";
           updateDurationUI();
           initQtyMaps();
-          buildProductsListIfNeeded(true);
-          recomputeAggAll();
           updateStageUI();
+          renderProducts();
           updateAllKpis();
-          markDraftDirty("init"); // 初回枠を作る
+          saveLocalDraftNow();
         }
       }
 
       await startRealtime();
 
+      setReloadBusy(false, "完了 ✅ ③へ移動します…");
       setMustReload(false);
-      setReloadBusy(false, "完了 ✅");
 
-      showTab("banquet");
-      setTimeout(scrollToMetaCard, 150);
+      // ✅ 要件：②完了後に③へ自動スクロール
+      setTimeout(() => {
+        showTab("banquet");
+        scrollToMetaCard();
+      }, 150);
 
     }catch(e){
       log("reloadAll error", e);
       setReloadBusy(false, "失敗: " + (e?.message || e));
-      alert("再読み込みに失敗しました。もう一度試してください。");
+      alert("再読み込みに失敗しました。再試行してください。");
+    }finally{
+      autoReloadInProgress = false;
     }
   }
 
   // -----------------------
-  // Buttons wiring
+  // Wiring
   // -----------------------
-  $("btnReloadNow").addEventListener("click", reloadAll);
   $("btnReloadRetry").addEventListener("click", reloadAll);
 
-  $("btnAutofillMin").addEventListener("click", applyMinToAllStarts);
+  $("btnDraftSave").addEventListener("click", async () => {
+    if(mustReload) return alert("②再読み込みが完了するまで操作できません。");
+    await saveRemoteDraftNow(); // ★⑤ 途中保存（同期）
+  });
+
+  $("btnDraftClear").addEventListener("click", clearDraftAll);
 
   $("btnConfirmStart").addEventListener("click", confirmStart);
   $("btnBackToStart").addEventListener("click", backToStart);
   $("btnFinishEvent").addEventListener("click", finishEvent);
-
-  $("btnDraftSave").addEventListener("click", async () => {
-    if(mustReload) return alert("②再読み込みが完了するまで操作できません。");
-    await saveRemoteDraftNow();
-  });
-  $("btnDraftClear").addEventListener("click", clearDraftAll);
 
   $("btnStageStart").addEventListener("click", () => { if(stage==="start") return; backToStart(); });
   $("btnStageEnd").addEventListener("click", () => { if(stage==="end") return; alert("⑦終了入力は⑥開始確定のあとです。"); });
@@ -1932,7 +1530,9 @@
   $("fFrom").addEventListener("change", renderEvents);
   $("fTo").addEventListener("change", renderEvents);
 
-  $("btnDump").addEventListener("click", () => { log("DUMP", { master, stage, start10, end10, agg, eventsCount: events.length }); });
+  $("btnDump").addEventListener("click", () => {
+    log("DUMP", { master, stage, start10, end10, eventsCount: events.length });
+  });
 
   ["evDate","evGuests","evDrinkPrice","evExt","evStyle","evStaff"].forEach(id => {
     $(id).addEventListener("change", () => {
@@ -1948,23 +1548,15 @@
     const name = ($("mName").value || "").trim();
     const unit = ($("mUnit").value || "本").trim() || "本";
     const cost = parseNumberSafe($("mCost").value);
-    const min = parseNumberSafe($("mMin").value);
 
     if(!name) return alert("商品名を入れてください");
     if(cost===null || cost<0) return alert("仕入単価が不正です");
-
-    let minQty = null;
-    if($("mMin").value.trim() !== ""){
-      if(min===null || min<0) return alert("最低用意数が不正です");
-      minQty = Number(min.toFixed(1));
-    }
 
     const it = {
       id: crypto.randomUUID ? crypto.randomUUID() : (Date.now()+""),
       name,
       unit,
       costYen: Math.round(cost),
-      minQty,
       category: ($("mCat").value || "").trim() || null,
       note: ($("mNote").value || "").trim() || null
     };
@@ -1978,12 +1570,10 @@
     $("mCat").value = "";
     $("mNote").value = "";
 
-    rebuildItemCaches();
     initQtyMaps();
-    buildProductsListIfNeeded(true);
-    recomputeAggAll();
-    updateAllKpis();
     renderMaster();
+    renderProducts();
+    updateAllKpis();
     markDraftDirty("master add");
   });
 
@@ -2000,17 +1590,22 @@
       log("login error", error);
       return alert("ログイン失敗: " + error.message);
     }
+
     await refreshAuthState();
+
+    // ✅ 要件：ログイン後 自動で②再読み込み
     setMustReload(true);
-    setReloadMsg("ログイン完了。②を押して再読み込みしてください。");
-    showTab("banquet");
+    setReloadMsg("ログイン成功。②再読み込みを自動開始します…");
+    if(!autoReloadInProgress){
+      autoReloadInProgress = true;
+      setTimeout(reloadAll, 60);
+    }
     window.scrollTo({ top:0, behavior:"smooth" });
   });
 
   $("btnLogout").addEventListener("click", async () => {
     stopRealtime();
-    const { error } = await sb.auth.signOut();
-    if(error) log("logout error", error);
+    await sb.auth.signOut();
     setMustReload(true);
     $("authState").textContent = "未ログイン";
     setReloadMsg("—");
@@ -2027,19 +1622,28 @@
 
     const u = await refreshAuthState();
     setMustReload(true);
-    setReloadMsg(u ? "セッションあり。②を押して再読み込みしてください。" : "未ログインです。①から。");
+    setReloadMsg(u ? "セッションあり。②再読み込みを自動開始します…" : "未ログインです。①から。");
 
-    buildProductsListIfNeeded(true);
-    recomputeAggAll();
+    renderProducts();
     updateStageUI();
     updateAllKpis();
+
+    // セッションがあれば、起動時も②を自動（押し忘れ防止）
+    if(u && !autoReloadInProgress){
+      autoReloadInProgress = true;
+      setTimeout(reloadAll, 80);
+    }
 
     sb.auth.onAuthStateChange(async (event) => {
       log("auth state", { event });
       await refreshAuthState();
-      setMustReload(true);
-      setReloadMsg("認証状態が変わりました。②を押して再読み込みしてください。");
       stopRealtime();
+      setMustReload(true);
+      setReloadMsg("認証状態が変わりました。②再読み込みを自動開始します…");
+      if(!autoReloadInProgress){
+        autoReloadInProgress = true;
+        setTimeout(reloadAll, 80);
+      }
     });
   })();
 })();
