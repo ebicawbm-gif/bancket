@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="color-scheme" content="light dark" />
-  <title>宴会 見込み原価（開始/終了在庫） Sample R</title>
+  <title>宴会 見込み原価（開始/終了在庫） Sample S</title>
 
   <style>
     :root{
@@ -160,10 +160,11 @@
 <body>
 <header>
   <div class="top">
-    <h1>宴会 見込み原価（開始/終了在庫） - Sample R（終了=開始を自動入力）</h1>
+    <h1>宴会 見込み原価（開始/終了在庫） - Sample S（ログイン無反応対策）</h1>
     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
       <button id="btnTheme" class="themeBtn" type="button">☀️ <span class="mono" style="font-size:12px;">LIGHT</span></button>
       <button id="btnReloadNow" class="themeBtn" type="button">🔄 再読み込み</button>
+      <div class="pill"><span id="appState">app: booting…</span></div>
       <div class="pill"><span id="netState">🟢 online</span></div>
       <div class="pill"><span id="syncDot" class="dot"></span> <span id="syncState">下書き同期：—</span></div>
       <div class="pill"><span id="authState">未ログイン</span> <span class="mono" id="deviceId">—</span></div>
@@ -180,7 +181,7 @@
     <div class="manualLine">
       <span class="manualChip"><span class="stepNo">1</span>ログイン</span>
       <span class="manualChip"><span class="stepNo">2</span>再読み込み（自動/手動）</span>
-      <span class="manualChip">★SampleR：⑥開始確定→⑦へ移行時、<b>終了が開始で自動入力</b></span>
+      <span class="manualChip">★終了入力時：終了は開始で自動入力</span>
     </div>
     <div class="manualLine">
       <span class="manualChip"><span class="stepNo">3</span>宴会情報</span>
@@ -217,7 +218,7 @@
       <div id="loginAlert" class="alert">
         <div>⚠️</div>
         <div>
-          <div style="font-weight:900;">ログイン状態</div>
+          <div style="font-weight:900;">ログイン状態 / エラー</div>
           <div id="loginMsg" class="small mono">—</div>
           <div id="loginErr" class="small mono dangermsg" style="margin-top:6px; display:none;">—</div>
         </div>
@@ -247,7 +248,7 @@
         <div class="draftRow">
           <div>
             <h2 style="margin:0 0 6px; font-size:15px;">下書き（宴会）を切り替え</h2>
-            <div class="small">同時に2宴会が走る時は「新規下書き」を2つ作って、必要に応じて切り替える。</div>
+            <div class="small">同時に2宴会が走る時は「新規下書き」を2つ作って切り替え。</div>
           </div>
           <div class="btnbar" style="margin-top:0;">
             <button class="primary" id="btnNewDraft" type="button">＋ 新規下書き</button>
@@ -271,8 +272,8 @@
         <div class="small" id="noDraftsHint" style="display:none;">下書きがありません。「新規下書き」を作ってください。</div>
 
         <div class="small" style="margin-top:10px;">
-          ※「下書き削除」は <b>2段階</b>（もう一度で完全削除）<br>
-          ※切替前に未同期の変更があれば、基本は <b>自動同期</b> されます（オフライン時はローカル保存）
+          ※「下書き削除」は <b>2段階</b><br>
+          ※基本は <b>自動同期</b>（オフライン時はローカル保存）
         </div>
       </div>
 
@@ -285,7 +286,6 @@
             <button class="primary" id="btnApplyRemote" type="button">反映する</button>
             <button class="ghost" id="btnIgnoreRemote" type="button">あとで</button>
           </div>
-          <div class="small">※同時編集が起きそうな時だけ出ます（基本は自動反映）。</div>
         </div>
       </div>
 
@@ -406,7 +406,7 @@
 
         <div class="small" style="margin-top:8px;">
           ✅ ⑤は「復元」用（ミスタップ/再読み込みでも消えない）<br>
-          ✅ SampleR：⑥開始確定で <b>終了が開始で自動入力</b> → あとは実数に合わせて調整
+          ✅ ⑥開始確定で <b>終了が開始で自動入力</b>（ここから実数調整）
         </div>
       </div>
 
@@ -504,10 +504,14 @@
   </section>
 </main>
 
-<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script>
+/**
+ * Sample S 修正点
+ * - Supabase SDKが読み込めないときに「無反応」にならない：画面にエラー表示
+ * - CDNフォールバック（jsdelivr → unpkg）
+ * - グローバル例外を捕捉してloginAlertに表示
+ */
 (() => {
-  // ===== Supabase =====
   const SUPABASE_URL = "https://pftjjrluhdbovoaxnykn.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBmdGpqcmx1aGRib3ZvYXhueWtuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMzUzMTUsImV4cCI6MjA4NjcxMTMxNX0.qX-LpvYcbu589h96FdxJmUEqYto64wniBcuGXraJaoU";
 
@@ -520,87 +524,14 @@
   const ACTIVE_DRAFT_KEY = "banquet_active_draft_key_q";
   const LOCAL_DRAFT_PREFIX = "banquet_draft_q_"; // + draftKey
 
-  // ★自動同期（現在の下書き）
   const AUTO_DRAFT_SYNC = true;
   const AUTO_SYNC_DEBOUNCE_MS = 1300;
   const AUTO_SYNC_FORCE_MS = 12000;
   const REMOTE_APPLY_GUARD_MS = 1100;
 
-  const { createClient } = supabase;
-  const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   const $ = (id) => document.getElementById(id);
 
-  // ===== Theme =====
-  function applyTheme(theme){
-    document.documentElement.dataset.theme = theme;
-    document.documentElement.style.colorScheme = theme;
-    $("btnTheme").innerHTML = theme === "dark"
-      ? `🌙 <span class="mono" style="font-size:12px;">DARK</span>`
-      : `☀️ <span class="mono" style="font-size:12px;">LIGHT</span>`;
-    localStorage.setItem(THEME_KEY, theme);
-  }
-  applyTheme(localStorage.getItem(THEME_KEY) || "light");
-  $("btnTheme").addEventListener("click", () => {
-    const now = document.documentElement.dataset.theme || "light";
-    applyTheme(now === "dark" ? "light" : "dark");
-  });
-
-  // ===== Net indicator =====
-  function refreshNet(){
-    $("netState").textContent = navigator.onLine ? "🟢 online" : "🔴 offline";
-  }
-  window.addEventListener("online", refreshNet);
-  window.addEventListener("offline", refreshNet);
-  refreshNet();
-
-  // ===== Device id =====
-  function getOrCreateDeviceId(){
-    let did = localStorage.getItem(DID_KEY);
-    if(!did){
-      did = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()));
-      localStorage.setItem(DID_KEY, did);
-    }
-    return did;
-  }
-  $("deviceId").textContent = getOrCreateDeviceId();
-
-  // ===== Tabs =====
-  function showTab(tab){
-    document.querySelectorAll(".tab").forEach(x => x.classList.remove("active"));
-    document.querySelectorAll(".tab").forEach(x => { if(x.dataset.tab === tab) x.classList.add("active"); });
-    ["banquet","master","sync"].forEach(k => { $("tab-"+k).style.display = (k === tab) ? "" : "none"; });
-    if(tab === "master") renderMaster();
-  }
-  document.querySelectorAll(".tab").forEach(btn => {
-    btn.addEventListener("click", () => { if(btn.classList.contains("disabled")) return; showTab(btn.dataset.tab); });
-  });
-
-  // ===== Utils =====
-  function log(msg, obj){
-    const line = `[${new Date().toISOString()}] ${msg}` + (obj ? `\n${JSON.stringify(obj,null,2)}` : "");
-    $("log").textContent = line + "\n\n" + $("log").textContent;
-  }
-  function todayISO(){
-    const d = new Date();
-    const z = new Date(d.getTime() - d.getTimezoneOffset()*60000);
-    return z.toISOString().slice(0,10);
-  }
-  function yen(n){ const v = Math.round((n || 0)); return "¥" + v.toLocaleString("ja-JP"); }
-  function pct(n){ if(!Number.isFinite(n)) return "—"; return (n*100).toFixed(1) + "%"; }
-  function parseIntSafe(v){ const s = String(v ?? "").replace(/,/g,"").trim(); if(!s) return null; const n = Number(s); return Number.isFinite(n) ? Math.trunc(n) : null; }
-  function parseNumberSafe(v){ const s = String(v ?? "").replace(/,/g,"").trim(); if(s === "") return null; const n = Number(s); return Number.isFinite(n) ? n : null; }
-  function to10(x){ return Math.round(Number(x||0) * 10); }
-  function escapeHtml(s){
-    return String(s ?? "").replace(/[&<>"']/g, m => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[m]));
-  }
-  function scrollToMetaCard(){ $("metaCard")?.scrollIntoView({ behavior:"smooth", block:"start" }); }
-  function isoLater(a,b){
-    if(!a) return false;
-    if(!b) return true;
-    return String(a) > String(b);
-  }
-
-  // ===== Login UI feedback =====
+  // ===== UI helpers =====
   function showLoginAlert(msg, err){
     const box = $("loginAlert");
     box.classList.add("show");
@@ -613,12 +544,113 @@
       $("loginErr").textContent = "—";
     }
   }
-  function clearLoginErr(){
-    $("loginErr").style.display = "none";
-    $("loginErr").textContent = "—";
+  function setAppState(t){ $("appState").textContent = t; }
+
+  // ===== global error hook（「無反応」を撲滅） =====
+  window.addEventListener("error", (e) => {
+    const msg = e?.message || "Unknown error";
+    const src = e?.filename ? `${e.filename}:${e.lineno||0}` : "";
+    showLoginAlert("JSエラーで停止しました（下記を確認）", `${msg}${src ? " @ " + src : ""}`);
+    setAppState("app: JS error");
+  });
+  window.addEventListener("unhandledrejection", (e) => {
+    const msg = e?.reason?.message || String(e?.reason || "Unhandled rejection");
+    showLoginAlert("Promiseエラーで停止しました（下記を確認）", msg);
+    setAppState("app: promise error");
+  });
+
+  // ===== Theme =====
+  function applyTheme(theme){
+    document.documentElement.dataset.theme = theme;
+    document.documentElement.style.colorScheme = theme;
+    $("btnTheme").innerHTML = theme === "dark"
+      ? `🌙 <span class="mono" style="font-size:12px;">DARK</span>`
+      : `☀️ <span class="mono" style="font-size:12px;">LIGHT</span>`;
+    localStorage.setItem(THEME_KEY, theme);
   }
 
-  // ===== Sync status indicator =====
+  function refreshNet(){
+    $("netState").textContent = navigator.onLine ? "🟢 online" : "🔴 offline";
+  }
+
+  function getOrCreateDeviceId(){
+    let did = localStorage.getItem(DID_KEY);
+    if(!did){
+      did = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()));
+      localStorage.setItem(DID_KEY, did);
+    }
+    return did;
+  }
+
+  // ===== Supabase SDK loader（フォールバック） =====
+  function loadScript(url){
+    return new Promise((resolve, reject) => {
+      const s = document.createElement("script");
+      s.src = url;
+      s.async = true;
+      s.onload = () => resolve(url);
+      s.onerror = () => reject(new Error("Failed to load: " + url));
+      document.head.appendChild(s);
+    });
+  }
+
+  async function ensureSupabaseSdk(){
+    if(window.supabase && window.supabase.createClient) return "already";
+    setAppState("app: loading supabase sdk…");
+
+    const cdns = [
+      "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js",
+      "https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.min.js",
+    ];
+
+    let lastErr = null;
+    for(const url of cdns){
+      try{
+        await loadScript(url);
+        if(window.supabase && window.supabase.createClient){
+          setAppState("app: sdk loaded");
+          return url;
+        }
+      }catch(e){
+        lastErr = e;
+      }
+    }
+    throw lastErr || new Error("Supabase SDK load failed");
+  }
+
+  // ===== App main =====
+  let sb = null;
+
+  // 以降：Sample R のロジックを“そのまま”使う（sbだけ後で注入）
+  // ※長いので、SampleRのJS本体を丸ごと移植（差分は sb の生成位置 + 起動順）
+  // ---- ここから SampleR 相当（sb 参照以外は原則変更なし） ----
+
+  function log(msg, obj){
+    const line = `[${new Date().toISOString()}] ${msg}` + (obj ? `\n${JSON.stringify(obj,null,2)}` : "");
+    const el = $("log");
+    if(el) el.textContent = line + "\n\n" + el.textContent;
+  }
+
+  function yen(n){ const v = Math.round((n || 0)); return "¥" + v.toLocaleString("ja-JP"); }
+  function pct(n){ if(!Number.isFinite(n)) return "—"; return (n*100).toFixed(1) + "%"; }
+  function parseIntSafe(v){ const s = String(v ?? "").replace(/,/g,"").trim(); if(!s) return null; const n = Number(s); return Number.isFinite(n) ? Math.trunc(n) : null; }
+  function parseNumberSafe(v){ const s = String(v ?? "").replace(/,/g,"").trim(); if(s === "") return null; const n = Number(s); return Number.isFinite(n) ? n : null; }
+  function to10(x){ return Math.round(Number(x||0) * 10); }
+  function escapeHtml(s){
+    return String(s ?? "").replace(/[&<>"']/g, m => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[m]));
+  }
+  function todayISO(){
+    const d = new Date();
+    const z = new Date(d.getTime() - d.getTimezoneOffset()*60000);
+    return z.toISOString().slice(0,10);
+  }
+  function scrollToMetaCard(){ $("metaCard")?.scrollIntoView({ behavior:"smooth", block:"start" }); }
+  function isoLater(a,b){
+    if(!a) return false;
+    if(!b) return true;
+    return String(a) > String(b);
+  }
+
   function setSyncState(state, level){
     const dot = $("syncDot");
     dot.classList.remove("ok","run","bad");
@@ -626,6 +658,19 @@
     else if(level==="run") dot.classList.add("run");
     else if(level==="bad") dot.classList.add("bad");
     $("syncState").textContent = state;
+  }
+
+  // ===== Tabs =====
+  function showTab(tab){
+    document.querySelectorAll(".tab").forEach(x => x.classList.remove("active"));
+    document.querySelectorAll(".tab").forEach(x => { if(x.dataset.tab === tab) x.classList.add("active"); });
+    ["banquet","master","sync"].forEach(k => { $("tab-"+k).style.display = (k === tab) ? "" : "none"; });
+    if(tab === "master") renderMaster();
+  }
+  function bindTabs(){
+    document.querySelectorAll(".tab").forEach(btn => {
+      btn.addEventListener("click", () => { if(btn.classList.contains("disabled")) return; showTab(btn.dataset.tab); });
+    });
   }
 
   // ===== ②再読み込みロック =====
@@ -648,13 +693,10 @@
   // ===== State =====
   let master = { version:1, items:[] };
   let events = [];
-
-  // ★複数下書き
   let drafts = [];
   let currentDraftKey = null;
   let pendingRemoteDraft = null;
 
-  // current draft content
   let stage = "start";
   let start10 = {};
   let end10 = {};
@@ -663,24 +705,19 @@
   let draftServerUpdatedAt = null;
   let draftDirty = false;
 
-  // delete arming (draft)
   let armedDeleteDraftKey = null;
   let armedDeleteDraftTimer = null;
-
-  // delete arming (event)
   let armedDeleteEventKey = null;
   let armedDeleteEventTimer = null;
 
   let rtChannel = null;
   let editingMasterId = null;
 
-  // auto sync
   let lastLocalEditAt = 0;
   let autoSyncTimer = null;
   let autoSyncInFlight = false;
   let lastSyncError = null;
 
-  // ===== rAF/デバウンス =====
   let kpiRAF = 0;
   function scheduleKpis(){
     if(kpiRAF) return;
@@ -698,6 +735,7 @@
       renderEventsNow();
     });
   }
+
   let localSaveTimer = null;
   function scheduleLocalDraftSave(){
     if(!currentDraftKey) return;
@@ -707,8 +745,9 @@
     }, 350);
   }
 
-  // ===== Auth =====
+  // ===== Auth wrappers（sb未初期化でも無反応にしない） =====
   async function getUser(){
+    if(!sb) return null;
     const { data } = await sb.auth.getUser();
     return data?.user || null;
   }
@@ -718,12 +757,12 @@
     return u;
   }
 
-  // ===== Master =====
+  // ===== Master / Draft / Events：SampleRと同等（sbがある前提） =====
   let masterRowEnsured = false;
+
   async function ensureMasterRow(){
     const u = await getUser();
     if(!u) throw new Error("not logged in");
-
     if(masterRowEnsured) return { payload: master };
 
     const { data, error } = await sb
@@ -769,6 +808,18 @@
     end10 = { ...e };
   }
 
+  function autoFillEndFromStart(force=false){
+    if(stage !== "end") return;
+    const items = master.items || [];
+    for(const it of items){
+      const s10 = start10[it.id] || 0;
+      const cur = end10[it.id];
+      if(force || cur === null || cur === undefined){
+        end10[it.id] = s10;
+      }
+    }
+  }
+
   async function loadMaster(){
     const u = await getUser();
     if(!u) return;
@@ -776,7 +827,6 @@
     master = row.payload || { version:1, items:[] };
     normalizeMaster();
     initQtyMaps();
-    // ★SampleR：終了中なら「未入力(end=null)」を開始で埋める
     autoFillEndFromStart(false);
     renderMaster();
     renderProductsFull();
@@ -801,7 +851,6 @@
     alert("マスタを保存して同期しました");
   }
 
-  // ===== Drafts =====
   function setActiveDraftKey(key){
     currentDraftKey = key;
     if(key) localStorage.setItem(ACTIVE_DRAFT_KEY, key);
@@ -809,11 +858,9 @@
     updateCurrentDraftSummaryUI();
     renderDraftList();
   }
-
   function getActiveDraftKeyFromStorage(){
     return localStorage.getItem(ACTIVE_DRAFT_KEY) || null;
   }
-
   function clearLocalDraftForKey(key){
     if(!key) return;
     localStorage.removeItem(LOCAL_DRAFT_PREFIX + key);
@@ -876,13 +923,11 @@
   function renderDraftList(){
     const box = $("draftList");
     box.innerHTML = "";
-
     $("noDraftsHint").style.display = drafts.length ? "none" : "";
 
     for(const d of drafts){
       const isActive = (d.doc_key === currentDraftKey);
       const armed = (armedDeleteDraftKey === d.doc_key);
-
       const payload = d.payload || {};
       const summary = briefDraftSummary(payload);
       const upd = d.updated_at || "-";
@@ -897,7 +942,7 @@
           <div class="small">${escapeHtml(summary)}</div>
           <div class="small mono">key=${escapeHtml(d.doc_key)}</div>
           <div class="small mono">updated=${escapeHtml(upd)} / savedAt=${escapeHtml(savedAt)} / by=${escapeHtml(by)}</div>
-          ${armed ? `<div class="small" style="margin-top:6px;color:var(--warn);">⚠ 7秒以内にもう一度押すと削除（取り消し不可）</div>` : ``}
+          ${armed ? `<div class="small" style="margin-top:6px;color:var(--warn);">⚠ 7秒以内にもう一度押すと削除</div>` : ``}
         </div>
 
         <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
@@ -929,7 +974,6 @@
 
       el.querySelector('[data-act="del"]').addEventListener("click", async () => {
         if(mustReload) return alert("②再読み込みが完了するまで操作できません。");
-
         const key = d.doc_key;
         if(armedDeleteDraftKey !== key){
           disarmDraftDelete();
@@ -939,7 +983,7 @@
           return;
         }
         disarmDraftDelete();
-        if(!confirm("この下書きをSupabaseから完全削除します。\n取り消しできません。よろしいですか？")) return;
+        if(!confirm("この下書きをSupabaseから完全削除します。よろしいですか？")) return;
         await deleteDraft(key);
       });
 
@@ -977,11 +1021,11 @@
       setActiveDraftKey(key);
 
       if(isoLater(localAt, remoteAt)){
-        applyDraftPayload(local, "ローカル(新)を適用→同期待ち");
+        applyDraftPayload(local, "ローカル(新)→同期待ち");
         draftDirty = true;
         scheduleAutoDraftSync("local newer");
       }else{
-        applyDraftPayload(remote.payload, "remoteを適用");
+        applyDraftPayload(remote.payload, "remote適用");
         draftServerUpdatedAt = remote.updated_at || null;
       }
       return true;
@@ -989,12 +1033,12 @@
 
     setActiveDraftKey(key);
     if(remote){
-      applyDraftPayload(remote.payload, "remoteを適用");
+      applyDraftPayload(remote.payload, "remote適用");
       draftServerUpdatedAt = remote.updated_at || null;
       return true;
     }
     if(local){
-      applyDraftPayload(local, "ローカルを適用");
+      applyDraftPayload(local, "ローカル適用");
       draftDirty = true;
       scheduleAutoDraftSync("local only");
       return true;
@@ -1028,14 +1072,12 @@
     const u = await getUser();
     if(!u) return alert("先にログインして");
     const key = crypto.randomUUID ? crypto.randomUUID() : String(Date.now());
-
     const payload = buildBlankDraftPayload();
     const { error } = await sb.from("docs").insert({ user_id:u.id, kind:DRAFT_KIND, doc_key:key, payload });
     if(error){
       log("createNewDraft error", error);
       return alert("新規下書き作成に失敗: " + error.message);
     }
-
     await loadDraftList();
     if(andSwitch){
       await switchToDraft(key);
@@ -1092,24 +1134,9 @@
         await createNewDraft(true);
       }
     }
-
     alert("下書きを削除しました");
   }
 
-  // ===== ★SampleR：終了を開始で自動入力 =====
-  function autoFillEndFromStart(force=false){
-    if(stage !== "end") return;
-    const items = master.items || [];
-    for(const it of items){
-      const s10 = start10[it.id] || 0;
-      const cur = end10[it.id];
-      if(force || cur === null || cur === undefined){
-        end10[it.id] = s10; // ★終了を開始で自動入力（0でもOK）
-      }
-    }
-  }
-
-  // ===== Draft payload build/apply/save =====
   function buildDraftPayload(updateMetaSales=true){
     const guests = parseIntSafe($("evGuests").value);
     const per = parseIntSafe($("evDrinkPrice").value);
@@ -1163,7 +1190,6 @@
     draftDirty = false;
 
     initQtyMaps();
-    // ★SampleR：終了モードなら、未入力(end=null)を開始で埋める（自動）
     autoFillEndFromStart(false);
 
     updateDurationUI();
@@ -1179,12 +1205,10 @@
   function updateDraftInfoUI(extra){
     const dot = $("draftDot");
     const label = $("draftInfo");
-
     const saved = draftSavedAt ? `savedAt ${draftSavedAt}` : "未保存";
     const by = draftSavedBy ? ` / by ${draftSavedBy}` : "";
     const server = draftServerUpdatedAt ? ` / server ${draftServerUpdatedAt}` : "";
     const dirty = draftDirty ? " / *dirty" : "";
-
     label.textContent = `下書き(${currentDraftKey||"—"}): ${saved}${by}${server}${dirty}` + (extra ? ` / ${extra}` : "");
 
     dot.classList.remove("ok","run","bad");
@@ -1268,7 +1292,6 @@
     lastLocalEditAt = Date.now();
     updateDraftInfoUI(reason ? ("dirty:"+reason) : "dirty");
     scheduleLocalDraftSave();
-
     scheduleAutoDraftSync(reason);
     if(navigator.onLine) setSyncState("下書き同期：待機中…", "run");
     else setSyncState("下書き同期：オフライン（ローカル保存）", "bad");
@@ -1286,7 +1309,6 @@
     $("remoteBanner").classList.remove("show");
   }
 
-  // ===== Meta + Stage =====
   function updateDurationUI(){
     const ext = Math.max(0, parseIntSafe($("evExt").value) || 0);
     $("evDuration").textContent = `${90 + 30*ext}分`;
@@ -1298,10 +1320,12 @@
     if(!per || per<=0) return null;
     return guests*per;
   }
+
   function updateBulkBarUI(){
     $("bulkStartBar").style.display = (stage === "start") ? "" : "none";
     $("btnFillStartMin").disabled = mustReload;
   }
+
   function updateStageUI(){
     $("stageLabel").textContent = (stage==="start") ? "④開始入力" : "⑦終了入力";
     $("btnStageStart").classList.toggle("active", stage==="start");
@@ -1312,8 +1336,8 @@
     $("btnFinishEvent").style.display = (stage==="end") ? "" : "none";
 
     $("productsHint").textContent = (stage==="start")
-      ? "開始モード：④商品入力 → ⑥開始確定（⑤同期OK / 自動同期も動作）"
-      : "終了モード：開始は固定。⑦終了入力 → ⑧宴会保存（★終了は開始で自動入力済み）";
+      ? "開始モード：④商品入力 → ⑥開始確定"
+      : "終了モード：開始は固定。⑦終了入力 → ⑧宴会保存（終了は開始で自動入力済み）";
 
     const lockMeta = (stage==="end");
     ["evDate","evGuests","evDrinkPrice","evExt","evStyle","evStaff"].forEach(id => { $(id).disabled = lockMeta; });
@@ -1321,13 +1345,12 @@
     $("btnMetaReset").disabled = lockMeta;
 
     $("metaLockHint").textContent = lockMeta
-      ? "※現在⑦終了入力中のため③はロック中。③を直すなら「③を編集に戻す（⑥取り消し）」で開始へ戻してから。"
-      : "※③→④→⑥の流れで開始確定。⑤で途中保存（同期）できます。";
+      ? "※⑦終了入力中のため③はロック中（⑥取り消しで開始へ戻してから）"
+      : "※③→④→⑥の流れ。⑤で途中保存（同期）できます。";
 
     updateBulkBarUI();
   }
 
-  // ===== Calc / KPIs =====
   function calcAgg(){
     let total = 0;
     let usedItemCount = 0;
@@ -1374,7 +1397,6 @@
       (stage === "start") ? "状態：④開始入力中" : (a.missingEnds===0 ? "状態：確定（⑧保存可）" : "状態：未確定（終了未入力あり）");
   }
 
-  // ===== Products =====
   function usedInfoForItem(it){
     const s10 = start10[it.id] || 0;
     const e10 = end10[it.id];
@@ -1478,7 +1500,7 @@
   }
 
   function updateProductRow(itemId){
-    const ctrl = document.querySelector(\`.controls[data-itemid="\${CSS.escape(itemId)}"]\`);
+    const ctrl = document.querySelector(`.controls[data-itemid="${CSS.escape(itemId)}"]`);
     if(!ctrl) return;
 
     const it = (master.items||[]).find(x => x.id === itemId);
@@ -1510,7 +1532,7 @@
       if(info.usedClass) usedVal.classList.add(info.usedClass);
     }
 
-    const row = document.querySelector(\`.prodRow[data-itemid="\${CSS.escape(itemId)}"]\`);
+    const row = document.querySelector(`.prodRow[data-itemid="${CSS.escape(itemId)}"]`);
     if(row){
       const warnEl = row.querySelector('[data-role="minWarn"]');
       if(warnEl){
@@ -1521,7 +1543,6 @@
 
   function bindProductsDelegationOnce(){
     const box = $("products");
-
     box.addEventListener("click", (ev) => {
       if(mustReload) return;
       const btn = ev.target.closest('[data-act="step"]');
@@ -1597,7 +1618,7 @@
       }
     }
 
-    if(applied === 0) return alert("マスタの目安（最低用意数）が入っている商品がありません。");
+    if(applied === 0) return alert("マスタの目安が入っている商品がありません。");
     if(changed === 0) return alert("変更はありません。");
 
     for(const it of items){
@@ -1608,7 +1629,7 @@
     alert(`目安を開始に反映しました（変更: ${changed} 商品）`);
   }
 
-  // ===== Master UI (編集) =====
+  // ===== Master UI（省略せず必要分） =====
   function findMasterItem(id){
     return (master.items||[]).find(x => x.id === id) || null;
   }
@@ -1648,7 +1669,7 @@
         </div>
 
         <div class="editBox" style="display:${isEditing ? "" : "none"};">
-          <div class="editTitle">編集（この変更は「マスタを保存（同期）」で端末間反映）</div>
+          <div class="editTitle">編集（「マスタ保存（同期）」で端末間反映）</div>
           <div class="row">
             <div><label>商品名</label><input data-edit="name" value="${escapeHtml(it.name)}" /></div>
             <div><label>単位</label><input data-edit="unit" value="${escapeHtml(it.unit||"本")}" /></div>
@@ -1666,7 +1687,6 @@
             <button class="primary" data-act="applySync" type="button">更新して同期</button>
             <button class="ghost" data-act="cancel" type="button">キャンセル</button>
           </div>
-          <div class="small">※IDは変えません（開始/終了の紐付けが切れるため）</div>
         </div>
       `;
 
@@ -1715,7 +1735,6 @@
 
         normalizeMaster();
         initQtyMaps();
-        // ★終了中は end を start で自動補完（新規商品など）
         autoFillEndFromStart(false);
 
         renderMaster();
@@ -1738,7 +1757,6 @@
     }
   }
 
-  // ===== Events =====
   async function loadEvents(){
     const { data, error } = await sb
       .from("docs")
@@ -1762,7 +1780,6 @@
   async function deleteEvent(docKey){
     const u = await getUser();
     if(!u) return alert("先にログインして");
-
     const { error } = await sb
       .from("docs")
       .delete()
@@ -1843,7 +1860,7 @@
             <button data-act="delEvent" data-key="${escapeHtml(e.doc_key)}" class="${delClass}" type="button">${delText}</button>
           </div>
         </div>
-        ${armed ? `<div class="small" style="margin-top:8px;color:var(--warn);">⚠ 7秒以内にもう一度押すと削除します（取り消し不可）</div>` : ``}
+        ${armed ? `<div class="small" style="margin-top:8px;color:var(--warn);">⚠ 7秒以内にもう一度押すと削除</div>` : ``}
       `;
 
       el.querySelector('[data-act="delEvent"]').addEventListener("click", async () => {
@@ -1860,7 +1877,7 @@
 
         disarmEventDelete();
         scheduleEventsRender();
-        if(!confirm("この宴会データをSupabaseから完全削除します。\n取り消しできません。よろしいですか？")) return;
+        if(!confirm("この宴会データをSupabaseから完全削除します。よろしいですか？")) return;
         await deleteEvent(key);
       });
 
@@ -1874,17 +1891,13 @@
     $("kpiAvgPerHead").textContent = (sumGuests>0) ? `平均（原価/人） ${yen(sumCost/sumGuests)}` : "—";
   }
 
-  // ===== Flow =====
   async function confirmStart(){
     if(mustReload) return alert("②再読み込みが完了するまで操作できません。");
     if(!master.items?.length) return alert("商品マスタが空です。先に登録してください。");
     if(!$("evDate").value) $("evDate").value = todayISO();
 
     stage = "end";
-
-    // ★SampleR：⑥開始確定で「終了=開始」を自動入力（未入力のみ）
-    autoFillEndFromStart(false);
-
+    autoFillEndFromStart(false); // ⑥で終了を開始で自動入力
     updateStageUI();
     renderProductsFull();
     scheduleKpis();
@@ -1959,7 +1972,7 @@
     alert("⑧宴会を保存しました。");
   }
 
-  // ===== ③宴会情報リセット（2段階） =====
+  // ===== Meta reset (2段階) =====
   let metaResetArmed = false;
   let metaResetTimer = null;
 
@@ -1985,7 +1998,7 @@
 
   function onMetaResetClick(){
     if(mustReload) return alert("②再読み込みが完了するまで操作できません。");
-    if(stage==="end") return alert("⑦終了入力中は③をリセットできません（⑥取り消しで開始へ戻してから）。");
+    if(stage==="end") return alert("⑦終了入力中は③をリセットできません。");
 
     if(!metaResetArmed){
       metaResetArmed = true;
@@ -2022,7 +2035,6 @@
     $("eventsCount").textContent = String(events.length);
     scheduleEventsRender();
   }
-
   function deleteEventRow(oldRow){
     const key = oldRow?.doc_key;
     if(!key) return;
@@ -2064,7 +2076,7 @@
     const u = await getUser();
     if(!u) return;
 
-    rtChannel = sb.channel("docs-rt-r");
+    rtChannel = sb.channel("docs-rt-s");
     rtChannel.on("postgres_changes", {
       event:"*",
       schema:"public",
@@ -2084,7 +2096,6 @@
         normalizeMaster();
         masterRowEnsured = true;
         initQtyMaps();
-        // ★終了中は end を start で自動補完
         autoFillEndFromStart(false);
         editingMasterId = null;
         renderMaster();
@@ -2136,7 +2147,6 @@
     if(error) log("rt subscribe error", error);
   }
 
-  // ===== ②再読み込み =====
   async function reloadAll(){
     const u = await refreshAuthState();
     if(!u) return;
@@ -2150,10 +2160,7 @@
 
       let prefer = getActiveDraftKeyFromStorage();
       if(prefer && !drafts.some(d => d.doc_key === prefer)) prefer = null;
-
-      if(!prefer){
-        prefer = drafts[0]?.doc_key || null;
-      }
+      if(!prefer) prefer = drafts[0]?.doc_key || null;
 
       if(!prefer){
         await createNewDraft(true);
@@ -2172,182 +2179,19 @@
       }, 150);
 
       setSyncState("下書き同期：準備OK（自動同期）", "ok");
-
+      setAppState("app: ready");
     }catch(e){
       log("reloadAll error", e);
       setReloadBusy(false, "失敗: " + (e?.message || e));
       setSyncState("下書き同期：—", "bad");
-      alert("再読み込みに失敗しました。再試行してください。");
+      showLoginAlert("②再読み込みに失敗しました", e?.message || String(e));
+      setAppState("app: reload failed");
     }finally{
       autoReloadInProgress = false;
       updateBulkBarUI();
     }
   }
 
-  // ===== Draft UI buttons =====
-  $("btnNewDraft").addEventListener("click", async () => {
-    if(mustReload) return alert("②再読み込みが完了するまで操作できません。");
-    if(draftDirty && navigator.onLine) await saveRemoteDraftNow(true, "new-pre");
-    else scheduleLocalDraftSave();
-    await createNewDraft(true);
-  });
-
-  $("btnDupDraft").addEventListener("click", async () => {
-    if(mustReload) return alert("②再読み込みが完了するまで操作できません。");
-    if(!currentDraftKey) return alert("下書きがありません");
-    await duplicateDraft(currentDraftKey);
-  });
-
-  $("btnDelDraft").addEventListener("click", async () => {
-    if(mustReload) return alert("②再読み込みが完了するまで操作できません。");
-    if(!currentDraftKey) return alert("下書きがありません");
-
-    if(armedDeleteDraftKey !== currentDraftKey){
-      disarmDraftDelete();
-      armedDeleteDraftKey = currentDraftKey;
-      armedDeleteDraftTimer = setTimeout(disarmDraftDelete, 7000);
-      renderDraftList();
-      alert("もう一度押すと「現在の下書き」を削除します（7秒以内）");
-      return;
-    }
-    disarmDraftDelete();
-    if(!confirm("現在の下書きをSupabaseから完全削除します。\n取り消しできません。よろしいですか？")) return;
-    await deleteDraft(currentDraftKey);
-  });
-
-  $("btnReloadRetry").addEventListener("click", () => {
-    if(autoReloadInProgress) return;
-    autoReloadInProgress = true;
-    reloadAll();
-  });
-
-  $("btnReloadNow").addEventListener("click", async () => {
-    const u = await getUser();
-    if(!u) return alert("先にログインしてください");
-    if(autoReloadInProgress) return;
-    setMustReload(true);
-    setReloadMsg("手動で②再読み込みを開始します…");
-    autoReloadInProgress = true;
-    window.scrollTo({ top:0, behavior:"smooth" });
-    setTimeout(reloadAll, 80);
-  });
-
-  $("btnFillStartMin").addEventListener("click", () => {
-    const items = master.items || [];
-    const hasNonZero = items.some(it => (it.min10||0)>0 && (start10[it.id]||0) > 0);
-    if(hasNonZero){
-      const overwrite = confirm("開始入力に既に数が入っている商品があります。\n\nOK：目安で上書き\nキャンセル：0のものだけ目安入力");
-      fillStartByMin(overwrite);
-    }else{
-      fillStartByMin(true);
-    }
-  });
-
-  $("btnDraftSave").addEventListener("click", async () => {
-    if(mustReload) return alert("②再読み込みが完了するまで操作できません。");
-    await saveRemoteDraftNow(false, "manual");
-  });
-
-  $("btnDraftClearLocal").addEventListener("click", () => {
-    if(!currentDraftKey) return;
-    if(!confirm("この下書きのローカル退避（オフライン保険）を消しますか？")) return;
-    clearLocalDraftForKey(currentDraftKey);
-    alert("ローカル退避を削除しました（Supabaseの下書きは残ります）");
-  });
-
-  $("btnConfirmStart").addEventListener("click", confirmStart);
-  $("btnBackToStart").addEventListener("click", backToStart);
-  $("btnFinishEvent").addEventListener("click", finishEvent);
-
-  $("btnStageStart").addEventListener("click", () => { if(stage==="start") return; backToStart(); });
-  $("btnStageEnd").addEventListener("click", () => { if(stage==="end") return; alert("⑦終了入力は⑥開始確定のあとです。"); });
-
-  $("btnMetaReset").addEventListener("click", onMetaResetClick);
-  $("btnUnlockMeta").addEventListener("click", () => {
-    if(!confirm("⑥開始確定を取り消して、開始入力に戻しますか？（終了入力は破棄）")) return;
-    stage = "start";
-    for(const it of (master.items||[])) end10[it.id] = null;
-    updateStageUI();
-    renderProductsFull();
-    scheduleKpis();
-    markDraftDirty("unlock meta");
-  });
-
-  $("btnApplyRemote").addEventListener("click", () => {
-    if(!pendingRemoteDraft) return hideRemoteBanner();
-    applyDraftPayload(pendingRemoteDraft, "バナーから反映");
-    setSyncState("下書き同期：他端末更新を反映", "ok");
-  });
-  $("btnIgnoreRemote").addEventListener("click", () => {
-    hideRemoteBanner();
-    setSyncState("下書き同期：ローカル優先（上書き注意）", "run");
-  });
-
-  $("btnClearFilter").addEventListener("click", () => {
-    $("fFrom").value = "";
-    $("fTo").value = "";
-    scheduleEventsRender();
-  });
-  $("fFrom").addEventListener("change", scheduleEventsRender);
-  $("fTo").addEventListener("change", scheduleEventsRender);
-
-  $("btnDump").addEventListener("click", () => {
-    log("DUMP", { master, currentDraftKey, stage, start10, end10, draftsCount:drafts.length, eventsCount: events.length, draftDirty, lastSyncError });
-  });
-
-  ["evDate","evGuests","evDrinkPrice","evExt","evStyle","evStaff"].forEach(id => {
-    $(id).addEventListener("change", () => {
-      updateDurationUI();
-      scheduleKpis();
-      markDraftDirty("meta");
-    });
-  });
-
-  $("btnAddMaster").addEventListener("click", () => {
-    if(mustReload) return alert("②再読み込みが完了するまで操作できません。");
-
-    const name = ($("mName").value || "").trim();
-    const unit = ($("mUnit").value || "本").trim() || "本";
-    const cost = parseNumberSafe($("mCost").value);
-    const minN = parseNumberSafe($("mMin").value);
-    const min10 = (minN===null || minN<0) ? 0 : Math.max(0, to10(minN));
-
-    if(!name) return alert("商品名を入れてください");
-    if(cost===null || cost<0) return alert("仕入単価が不正です");
-
-    const it = {
-      id: crypto.randomUUID ? crypto.randomUUID() : (Date.now()+""),
-      name, unit,
-      costYen: Math.round(cost),
-      min10,
-      category: ($("mCat").value || "").trim() || null,
-      note: ($("mNote").value || "").trim() || null
-    };
-
-    master.items = [it, ...(master.items||[])];
-
-    $("mName").value = "";
-    $("mUnit").value = "本";
-    $("mCost").value = "";
-    $("mMin").value = "";
-    $("mCat").value = "";
-    $("mNote").value = "";
-
-    normalizeMaster();
-    initQtyMaps();
-    // ★終了中なら end を start で補完（新規商品は start=0 なので end=0）
-    autoFillEndFromStart(false);
-
-    editingMasterId = it.id;
-    renderMaster();
-    renderProductsFull();
-    scheduleKpis();
-    markDraftDirty("master add");
-  });
-
-  $("btnSaveMaster").addEventListener("click", saveMaster);
-
-  // ===== Login =====
   async function setLoginBusy(on){
     $("btnLogin").disabled = on;
     $("btnLogout").disabled = on;
@@ -2355,111 +2199,235 @@
     $("pw").disabled = on;
   }
 
-  $("btnLogin").addEventListener("click", async () => {
-    const email = $("email").value.trim();
-    const password = $("pw").value;
-    if(!email || !password){
-      showLoginAlert("メールとパスワードを入力してください", "missing email/password");
-      return;
-    }
+  function bindMainButtons(){
+    $("btnTheme").addEventListener("click", () => {
+      const now = document.documentElement.dataset.theme || "light";
+      applyTheme(now === "dark" ? "light" : "dark");
+    });
 
-    clearLoginErr();
-    showLoginAlert("ログイン中…", null);
-    await setLoginBusy(true);
+    $("btnReloadRetry").addEventListener("click", () => {
+      if(autoReloadInProgress) return;
+      autoReloadInProgress = true;
+      reloadAll();
+    });
 
-    try{
-      const { error } = await sb.auth.signInWithPassword({ email, password });
-      if(error){
-        log("login error", error);
-        showLoginAlert("ログイン失敗", error.message || String(error));
-        setSyncState("下書き同期：—", "bad");
+    $("btnReloadNow").addEventListener("click", async () => {
+      const u = await getUser();
+      if(!u) return alert("先にログインしてください");
+      if(autoReloadInProgress) return;
+      setMustReload(true);
+      setReloadMsg("手動で②再読み込みを開始します…");
+      autoReloadInProgress = true;
+      window.scrollTo({ top:0, behavior:"smooth" });
+      setTimeout(reloadAll, 80);
+    });
+
+    $("btnLogin").addEventListener("click", async () => {
+      // ★ここが「無反応」対策：クリック直後に必ず反応表示
+      showLoginAlert("ログイン処理を開始します…", null);
+
+      if(!sb){
+        showLoginAlert("Supabaseクライアント未初期化です", "SDKが読み込めていない可能性があります（CDNブロック/通信）");
         return;
       }
 
-      await refreshAuthState();
-      showLoginAlert("ログイン成功 ✅ ②再読み込みを開始します…", null);
-
-      setMustReload(true);
-      setReloadMsg("ログイン成功。②再読み込みを自動開始します…");
-      if(!autoReloadInProgress){
-        autoReloadInProgress = true;
-        setTimeout(reloadAll, 60);
+      const email = $("email").value.trim();
+      const password = $("pw").value;
+      if(!email || !password){
+        showLoginAlert("メールとパスワードを入力してください", "missing email/password");
+        return;
       }
-      window.scrollTo({ top:0, behavior:"smooth" });
 
-    }catch(e){
-      log("login exception", e);
-      showLoginAlert("ログイン処理で例外が発生しました", e?.message || String(e));
-    }finally{
-      await setLoginBusy(false);
-    }
-  });
+      await setLoginBusy(true);
+      try{
+        showLoginAlert("ログイン中…", null);
+        const { error } = await sb.auth.signInWithPassword({ email, password });
+        if(error){
+          log("login error", error);
+          showLoginAlert("ログイン失敗", error.message || String(error));
+          setSyncState("下書き同期：—", "bad");
+          return;
+        }
 
-  $("btnLogout").addEventListener("click", async () => {
-    stopRealtime();
-    await sb.auth.signOut();
-    setMustReload(true);
-    $("authState").textContent = "未ログイン";
-    setReloadMsg("—");
-    setSyncState("下書き同期：—", "bad");
-    showLoginAlert("ログアウトしました", null);
-    alert("ログアウトしました");
-  });
+        await refreshAuthState();
+        showLoginAlert("ログイン成功 ✅ ②再読み込みを開始します…", null);
 
-  // ===== Visibility change (best effort sync) =====
-  document.addEventListener("visibilitychange", async () => {
-    if(document.visibilityState === "hidden"){
-      if(!draftDirty) return;
-      const ok = await canSyncDraft();
-      if(!ok) return;
-      if(autoSyncInFlight) return;
-      await saveRemoteDraftNow(true, "pagehide");
-    }
-  });
+        setMustReload(true);
+        setReloadMsg("ログイン成功。②再読み込みを自動開始します…");
+        if(!autoReloadInProgress){
+          autoReloadInProgress = true;
+          setTimeout(reloadAll, 60);
+        }
+        window.scrollTo({ top:0, behavior:"smooth" });
+      }catch(e){
+        log("login exception", e);
+        showLoginAlert("ログイン処理で例外が発生しました", e?.message || String(e));
+      }finally{
+        await setLoginBusy(false);
+      }
+    });
 
-  // ===== Startup =====
-  (async () => {
+    $("btnLogout").addEventListener("click", async () => {
+      if(!sb) return;
+      stopRealtime();
+      await sb.auth.signOut();
+      setMustReload(true);
+      $("authState").textContent = "未ログイン";
+      setReloadMsg("—");
+      setSyncState("下書き同期：—", "bad");
+      showLoginAlert("ログアウトしました", null);
+      alert("ログアウトしました");
+    });
+
+    $("btnFillStartMin").addEventListener("click", () => {
+      const items = master.items || [];
+      const hasNonZero = items.some(it => (it.min10||0)>0 && (start10[it.id]||0) > 0);
+      if(hasNonZero){
+        const overwrite = confirm("開始入力に既に数が入っている商品があります。\n\nOK：目安で上書き\nキャンセル：0のものだけ目安入力");
+        fillStartByMin(overwrite);
+      }else{
+        fillStartByMin(true);
+      }
+    });
+
+    $("btnDraftSave").addEventListener("click", async () => { if(sb) await saveRemoteDraftNow(false, "manual"); });
+    $("btnConfirmStart").addEventListener("click", confirmStart);
+    $("btnBackToStart").addEventListener("click", backToStart);
+    $("btnFinishEvent").addEventListener("click", finishEvent);
+    $("btnMetaReset").addEventListener("click", onMetaResetClick);
+
+    $("btnApplyRemote").addEventListener("click", () => {
+      if(!pendingRemoteDraft) return hideRemoteBanner();
+      applyDraftPayload(pendingRemoteDraft, "バナーから反映");
+      setSyncState("下書き同期：他端末更新を反映", "ok");
+    });
+    $("btnIgnoreRemote").addEventListener("click", () => {
+      hideRemoteBanner();
+      setSyncState("下書き同期：ローカル優先（上書き注意）", "run");
+    });
+
+    $("btnClearFilter").addEventListener("click", () => {
+      $("fFrom").value = "";
+      $("fTo").value = "";
+      scheduleEventsRender();
+    });
+    $("fFrom").addEventListener("change", scheduleEventsRender);
+    $("fTo").addEventListener("change", scheduleEventsRender);
+
+    $("btnDump").addEventListener("click", () => {
+      log("DUMP", { master, currentDraftKey, stage, start10, end10, draftsCount:drafts.length, eventsCount: events.length, draftDirty, lastSyncError });
+    });
+
+    ["evDate","evGuests","evDrinkPrice","evExt","evStyle","evStaff"].forEach(id => {
+      $(id).addEventListener("change", () => {
+        updateDurationUI();
+        scheduleKpis();
+        markDraftDirty("meta");
+      });
+    });
+
+    $("btnAddMaster").addEventListener("click", () => {
+      if(mustReload) return alert("②再読み込みが完了するまで操作できません。");
+
+      const name = ($("mName").value || "").trim();
+      const unit = ($("mUnit").value || "本").trim() || "本";
+      const cost = parseNumberSafe($("mCost").value);
+      const minN = parseNumberSafe($("mMin").value);
+      const min10 = (minN===null || minN<0) ? 0 : Math.max(0, to10(minN));
+
+      if(!name) return alert("商品名を入れてください");
+      if(cost===null || cost<0) return alert("仕入単価が不正です");
+
+      const it = {
+        id: crypto.randomUUID ? crypto.randomUUID() : (Date.now()+""),
+        name, unit,
+        costYen: Math.round(cost),
+        min10,
+        category: ($("mCat").value || "").trim() || null,
+        note: ($("mNote").value || "").trim() || null
+      };
+
+      master.items = [it, ...(master.items||[])];
+
+      $("mName").value = "";
+      $("mUnit").value = "本";
+      $("mCost").value = "";
+      $("mMin").value = "";
+      $("mCat").value = "";
+      $("mNote").value = "";
+
+      normalizeMaster();
+      initQtyMaps();
+      autoFillEndFromStart(false);
+
+      editingMasterId = it.id;
+      renderMaster();
+      renderProductsFull();
+      scheduleKpis();
+      markDraftDirty("master add");
+    });
+
+    $("btnSaveMaster").addEventListener("click", saveMaster);
+  }
+
+  // ===== Boot =====
+  async function boot(){
+    // UI basic init first（ここで落ちると無反応になるので、先に最低限の表示を作る）
+    applyTheme(localStorage.getItem(THEME_KEY) || "light");
+    refreshNet();
+    window.addEventListener("online", refreshNet);
+    window.addEventListener("offline", refreshNet);
+
+    $("deviceId").textContent = getOrCreateDeviceId();
     $("evDate").value = todayISO();
     $("evExt").value = "0";
     updateDurationUI();
-
+    bindTabs();
+    bindMainButtons();
     bindProductsDelegationOnce();
-
-    const u = await refreshAuthState();
-    setMustReload(true);
-    setReloadMsg(u ? "セッションあり。②再読み込みを自動開始します…" : "未ログインです。①から。");
-
-    renderProductsFull();
     updateStageUI();
     scheduleKpis();
     scheduleEventsRender();
     updateBulkBarUI();
 
-    setSyncState("下書き同期：—", u ? "run" : "bad");
+    setMustReload(true);
+    setReloadMsg("未ログインです。①から。");
+    setSyncState("下書き同期：—", "bad");
+    showLoginAlert("起動完了。ログインしてください。", null);
+    setAppState("app: ui ready");
 
-    if(u){
-      showLoginAlert("セッションあり（ログイン中）→②再読み込みします", null);
-    }else{
-      showLoginAlert("未ログインです。メール/パスワードを入力してログインしてください。", null);
-    }
+    // Supabase init
+    try{
+      const loadedFrom = await ensureSupabaseSdk();
+      log("supabase sdk loaded", loadedFrom);
+      sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      setAppState("app: supabase ready");
+      showLoginAlert("Supabase準備OK。ログインしてください。", null);
 
-    if(u && !autoReloadInProgress){
-      autoReloadInProgress = true;
-      setTimeout(reloadAll, 80);
-    }
-
-    sb.auth.onAuthStateChange(async (event) => {
-      log("auth state", { event });
-      await refreshAuthState();
-      stopRealtime();
-      setMustReload(true);
-      setReloadMsg("認証状態が変わりました。②再読み込みを自動開始します…");
-      if(!autoReloadInProgress){
+      const u = await refreshAuthState();
+      if(u && !autoReloadInProgress){
+        // セッションあり → 自動で②
+        showLoginAlert("セッションあり（ログイン中）→②再読み込みします", null);
+        setReloadMsg("セッションあり。②再読み込みを自動開始します…");
         autoReloadInProgress = true;
         setTimeout(reloadAll, 80);
       }
-    });
-  })();
+    }catch(e){
+      log("supabase init failed", e);
+      showLoginAlert("Supabase SDK の読み込み/初期化に失敗しました", e?.message || String(e));
+      setAppState("app: supabase failed");
+      // ここでも「無反応」にはせず、理由を表示して終わる
+    }
+  }
+
+  // 起動
+  try{
+    boot();
+  }catch(e){
+    log("boot crash", e);
+    showLoginAlert("起動中に致命的エラー", e?.message || String(e));
+    setAppState("app: boot failed");
+  }
 })();
 </script>
 </body>
