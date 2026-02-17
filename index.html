@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="color-scheme" content="light dark" />
-  <title>宴会 見込み原価（開始/終了在庫） Sample M</title>
+  <title>宴会 見込み原価（開始/終了在庫） Sample N</title>
 
   <style>
     :root{
@@ -92,7 +92,7 @@
       border-top:1px dashed color-mix(in oklab, var(--text) 12%, transparent); }
     .prodRow:first-child{ border-top:none; padding-top:0; }
     .prodName{ font-size:16px; font-weight:800; text-align:center; letter-spacing:.02em; }
-    .prodMeta{ font-size:12px; color:var(--muted); margin-top:6px; text-align:center; }
+    .prodMeta{ font-size:12px; color:var(--muted); margin-top:6px; text-align:center; display:flex; gap:8px; justify-content:center; align-items:center; flex-wrap:wrap; }
 
     .controls{ display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; align-items:stretch; }
     .ctrlBox{ border:1px solid var(--line); border-radius:14px; padding:10px; background: color-mix(in oklab, var(--card) 92%, var(--bg)); }
@@ -127,7 +127,7 @@
 <body>
 <header>
   <div class="top">
-    <h1>宴会 見込み原価（開始/終了在庫） - Sample M</h1>
+    <h1>宴会 見込み原価（開始/終了在庫） - Sample N</h1>
     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
       <button id="btnTheme" class="themeBtn" type="button">☀️ <span class="mono" style="font-size:12px;">LIGHT</span></button>
       <button id="btnReloadNow" class="themeBtn" type="button">🔄 再読み込み</button>
@@ -197,10 +197,7 @@
     </div>
 
     <div id="appArea" class="grid locked">
-      <!-- ここから下は Sample K とほぼ同じ（軽量化はJS中心） -->
-      <!-- 長いので UI 部分はKと同等。商品入力/宴会一覧/マスタ/ログも同じ構造 -->
-      <!-- ※このSample Mは「動作・軽量化」実装が主目的なので、UIはK準拠 -->
-      <!-- 省略せず全部必要なら言って。 -->
+
       <div class="card" id="metaCard">
         <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
           <h2 style="margin:0; font-size:15px;"><span class="stepNo">3</span>宴会 情報</h2>
@@ -329,6 +326,13 @@
             <div class="small" id="productsHint">開始モード：④商品入力 → ⑥開始確定</div>
           </div>
         </div>
+
+        <!-- ★サンプルN：目安一括入力ボタン（開始時だけ表示） -->
+        <div class="btnbar" id="bulkStartBar" style="margin-top:8px; display:none;">
+          <button class="primary" id="btnFillStartMin" type="button">④ 目安を開始に一括入力</button>
+          <span class="small">※OK=目安で上書き / キャンセル=0のものだけ目安入力</span>
+        </div>
+
         <div class="hr"></div>
         <div id="products" class="list"></div>
         <div id="noProducts" class="small">商品マスタが空です。「商品マスタ」タブで先に登録してください。</div>
@@ -366,7 +370,11 @@
       </div>
       <div class="row">
         <div><label>仕入単価（円/1単位）</label><input id="mCost" inputmode="numeric" placeholder="例：4800" /></div>
-        <div><label>最低用意数（本）</label><input id="mMin" inputmode="decimal" placeholder="例：6（0.1刻みOK）" /><div class="small">不足表示に使います（開始入力の目安）。</div></div>
+        <div>
+          <label>最低用意数（目安）</label>
+          <input id="mMin" inputmode="decimal" placeholder="例：6（0.1刻みOK）" />
+          <div class="small">開始入力の「目安一括入力」に使います。</div>
+        </div>
       </div>
       <div class="row">
         <div><label>カテゴリ（任意）</label><input id="mCat" placeholder="例：BEER / WHISKY / WINE / SOFT" /></div>
@@ -411,7 +419,7 @@
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBmdGpqcmx1aGRib3ZvYXhueWtuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMzUzMTUsImV4cCI6MjA4NjcxMTMxNX0.qX-LpvYcbu589h96FdxJmUEqYto64wniBcuGXraJaoU";
 
   const DRAFT_KIND = "event_draft";
-  const LOCAL_DRAFT_KEY = "banquet_draft_m";
+  const LOCAL_DRAFT_KEY = "banquet_draft_n";
   const THEME_KEY = "banquet_theme";
   const DID_KEY = "banquet_device_id";
 
@@ -505,14 +513,12 @@
   let draftServerUpdatedAt = null;
   let draftDirty = false;
 
-  // 2段階削除（宴会）
   let armedDeleteEventKey = null;
   let armedDeleteTimer = null;
 
-  // Realtime
   let rtChannel = null;
 
-  // ===== 軽量化: rAFでまとめ描画 =====
+  // ===== rAF/デバウンス =====
   let kpiRAF = 0;
   function scheduleKpis(){
     if(kpiRAF) return;
@@ -521,7 +527,6 @@
       updateAllKpisNow();
     });
   }
-
   let eventsRAF = 0;
   function scheduleEventsRender(){
     if(eventsRAF) return;
@@ -530,8 +535,6 @@
       renderEventsNow();
     });
   }
-
-  // ===== 軽量化: localStorage保存デバウンス =====
   let localSaveTimer = null;
   function scheduleLocalDraftSave(){
     clearTimeout(localSaveTimer);
@@ -583,6 +586,14 @@
     return data;
   }
 
+  function normalizeMaster(){
+    master = master || { version:1, items:[] };
+    master.items = (master.items || []).map(it => {
+      const min10 = Number.isFinite(Number(it.min10)) ? Math.max(0, Math.trunc(it.min10)) : 0;
+      return { ...it, min10 };
+    });
+  }
+
   function initQtyMaps(){
     const s = {};
     const e = {};
@@ -599,6 +610,7 @@
     if(!u) return;
     const row = await ensureMasterRow();
     master = row.payload || { version:1, items:[] };
+    normalizeMaster();
     initQtyMaps();
     renderMaster();
     renderProductsFull();
@@ -609,6 +621,8 @@
     if(mustReload) return alert("②再読み込みが完了するまで操作できません。");
     const u = await getUser();
     if(!u) return alert("先にログインして");
+
+    normalizeMaster();
 
     const { error } = await sb
       .from("docs")
@@ -676,7 +690,7 @@
     initQtyMaps();
     updateDurationUI();
     updateStageUI();
-    renderProductsFull(); // ステージやロックを反映するのでここは全描画
+    renderProductsFull();
     scheduleKpis();
     updateDraftInfoUI("適用");
     scheduleLocalDraftSave();
@@ -769,6 +783,11 @@
     return guests*per;
   }
 
+  function updateBulkBarUI(){
+    $("bulkStartBar").style.display = (stage === "start") ? "" : "none";
+    $("btnFillStartMin").disabled = mustReload;
+  }
+
   function updateStageUI(){
     $("stageLabel").textContent = (stage==="start") ? "④開始入力" : "⑦終了入力";
     $("btnStageStart").classList.toggle("active", stage==="start");
@@ -790,6 +809,8 @@
     $("metaLockHint").textContent = lockMeta
       ? "※現在⑦終了入力中のため③はロック中。③を直すなら「③を編集に戻す（⑥取り消し）」で開始へ戻してから。"
       : "※③→④→⑥の流れで開始確定。⑤で途中保存（同期）できます。";
+
+    updateBulkBarUI();
   }
 
   // ===== Calc / KPIs =====
@@ -839,7 +860,7 @@
       (stage === "start") ? "状態：④開始入力中" : (a.missingEnds===0 ? "状態：確定（⑧保存可）" : "状態：未確定（終了未入力あり）");
   }
 
-  // ===== Products: 全描画（ステージ切替/マスタ更新時） =====
+  // ===== Products =====
   function usedInfoForItem(it){
     const s10 = start10[it.id] || 0;
     const e10 = end10[it.id];
@@ -847,6 +868,12 @@
     const usedText = (used10===null) ? "—" : (used10/10).toFixed(1);
     const usedClass = (used10===null) ? "missing" : (used10<0 ? "negative" : "");
     return { s10, e10, usedText, usedClass };
+  }
+
+  function needWarn(it){
+    const min10 = it.min10 || 0;
+    const s10 = start10[it.id] || 0;
+    return (stage === "start" && min10 > 0 && s10 < min10);
   }
 
   function renderProductsFull(){
@@ -861,13 +888,22 @@
       if(end10[it.id]===undefined) end10[it.id]=null;
 
       const info = usedInfoForItem(it);
+      const min10 = it.min10 || 0;
+      const minText = (min10>0) ? (min10/10).toFixed(1) : "—";
+      const showWarn = needWarn(it);
 
       const row = document.createElement("div");
       row.className = "prodRow";
+      row.setAttribute("data-itemid", it.id);
       row.innerHTML = `
         <div>
           <div class="prodName">${escapeHtml(it.name)}</div>
-          <div class="prodMeta">単価 ${yen(Number(it.costYen||0))} / 単位 ${escapeHtml(it.unit||"本")}</div>
+          <div class="prodMeta">
+            <span>単価 <span class="mono">${yen(Number(it.costYen||0))}</span></span>
+            <span>/ 単位 ${escapeHtml(it.unit||"本")}</span>
+            <span>/ 目安 <span class="mono" data-role="minVal">${escapeHtml(minText)}</span></span>
+            <span class="badge warn" data-role="minWarn" style="display:${showWarn ? "inline-flex" : "none"};">目安未達</span>
+          </div>
         </div>
 
         <div class="controls" data-itemid="${escapeHtml(it.id)}">
@@ -927,7 +963,6 @@
     }
   }
 
-  // ===== Products: 変更行だけ更新（軽量化） =====
   function updateProductRow(itemId){
     const ctrl = document.querySelector(`.controls[data-itemid="${CSS.escape(itemId)}"]`);
     if(!ctrl) return;
@@ -960,9 +995,16 @@
       usedVal.classList.remove("missing","negative");
       if(info.usedClass) usedVal.classList.add(info.usedClass);
     }
+
+    const row = document.querySelector(`.prodRow[data-itemid="${CSS.escape(itemId)}"]`);
+    if(row){
+      const warnEl = row.querySelector('[data-role="minWarn"]');
+      if(warnEl){
+        warnEl.style.display = needWarn(it) ? "inline-flex" : "none";
+      }
+    }
   }
 
-  // ===== Products event delegation（一度だけ） =====
   function bindProductsDelegationOnce(){
     const box = $("products");
 
@@ -1019,6 +1061,41 @@
     });
   }
 
+  // ★サンプルN：目安一括入力（開始）
+  function fillStartByMin(overwrite){
+    if(stage !== "start") return alert("目安一括入力は開始（④）のときだけ使えます。");
+    if(mustReload) return alert("②再読み込みが完了するまで操作できません。");
+    const items = master.items || [];
+    if(!items.length) return alert("商品マスタが空です。");
+
+    let changed = 0;
+    let applied = 0;
+    for(const it of items){
+      const min10 = it.min10 || 0;
+      if(min10 <= 0) continue;
+      applied++;
+
+      const cur = start10[it.id] || 0;
+      if(!overwrite && cur > 0) continue; // 0以外は触らない
+
+      if(cur !== min10){
+        start10[it.id] = min10;
+        changed++;
+      }
+    }
+
+    if(applied === 0) return alert("マスタの目安（最低用意数）が入っている商品がありません。");
+    if(changed === 0) return alert("変更はありません（すでに目安が反映済み、または0以外は維持）。");
+
+    // まとめて更新（120件想定でもOK）
+    for(const it of items){
+      if((it.min10||0) > 0) updateProductRow(it.id);
+    }
+    scheduleKpis();
+    markDraftDirty("fill min");
+    alert(`目安を開始に反映しました（変更: ${changed} 商品）`);
+  }
+
   // ===== Master UI =====
   function renderMaster(){
     const box = $("masterList");
@@ -1027,13 +1104,20 @@
     $("noMaster").style.display = items.length ? "none" : "";
 
     for(const it of items){
+      const min10 = it.min10 || 0;
+      const minTxt = (min10>0) ? (min10/10).toFixed(1) : "—";
+
       const el = document.createElement("div");
       el.className = "item";
       el.innerHTML = `
         <div class="itemHeader">
           <div>
             <h3>${escapeHtml(it.name)}</h3>
-            <div class="small">単位：${escapeHtml(it.unit||"本")} / 単価：<span class="mono">${yen(Number(it.costYen||0))}</span></div>
+            <div class="small">
+              単位：${escapeHtml(it.unit||"本")}
+              / 単価：<span class="mono">${yen(Number(it.costYen||0))}</span>
+              / 目安：<span class="mono">${escapeHtml(minTxt)}</span>
+            </div>
           </div>
           <div><span class="badge">ID: ${escapeHtml(it.id)}</span></div>
         </div>
@@ -1057,7 +1141,7 @@
     }
   }
 
-  // ===== Events load/render/delete =====
+  // ===== Events load/render/delete（Mと同等） =====
   async function loadEvents(){
     const { data, error } = await sb
       .from("docs")
@@ -1193,36 +1277,28 @@
     $("kpiAvgPerHead").textContent = (sumGuests>0) ? `平均（原価/人） ${yen(sumCost/sumGuests)}` : "—";
   }
 
-  // ===== Flow =====
-  function setStageStart(){
-    stage = "start";
-    for(const it of (master.items||[])) end10[it.id] = null;
-    updateStageUI();
-    renderProductsFull();
-    scheduleKpis();
-    markDraftDirty("stage start");
-  }
-  function setStageEnd(){
-    stage = "end";
-    for(const it of (master.items||[])) if(end10[it.id]===undefined) end10[it.id] = null;
-    updateStageUI();
-    renderProductsFull();
-    scheduleKpis();
-    markDraftDirty("stage end");
-  }
-
+  // ===== Flow（Mと同等） =====
   async function confirmStart(){
     if(mustReload) return alert("②再読み込みが完了するまで操作できません。");
     if(!master.items?.length) return alert("商品マスタが空です。先に登録してください。");
     if(!$("evDate").value) $("evDate").value = todayISO();
-    setStageEnd();
+    stage = "end";
+    updateStageUI();
+    renderProductsFull();
+    scheduleKpis();
+    markDraftDirty("stage end");
     alert("⑥開始を確定しました。次は⑦終了入力です。");
   }
 
   async function backToStart(){
     if(mustReload) return alert("②再読み込みが完了するまで操作できません。");
     if(!confirm("終了入力を破棄して、開始入力へ戻りますか？")) return;
-    setStageStart();
+    stage = "start";
+    for(const it of (master.items||[])) end10[it.id] = null;
+    updateStageUI();
+    renderProductsFull();
+    scheduleKpis();
+    markDraftDirty("stage start");
   }
 
   function buildEventPayload(){
@@ -1295,13 +1371,11 @@
     renderProductsFull();
     scheduleKpis();
 
-    // 軽量化：ここで全再取得しなくてもRealtimeで入るが、確実性のため1回だけ
     await loadEvents();
-
     alert("⑧宴会を保存しました。");
   }
 
-  // ===== ③宴会情報リセット（2段階） =====
+  // ===== ③宴会情報リセット（Mと同等） =====
   let metaResetArmed = false;
   let metaResetTimer = null;
 
@@ -1378,7 +1452,7 @@
     updateDraftInfoUI("削除済み");
   }
 
-  // ===== Realtime（軽量化: 差分反映） =====
+  // ===== Realtime（Mと同等） =====
   function stopRealtime(){
     if(rtChannel){
       sb.removeChannel(rtChannel);
@@ -1409,7 +1483,7 @@
     const u = await getUser();
     if(!u) return;
 
-    rtChannel = sb.channel("docs-rt-m");
+    rtChannel = sb.channel("docs-rt-n");
     rtChannel.on("postgres_changes", {
       event:"*",
       schema:"public",
@@ -1427,6 +1501,7 @@
 
       if(kind === "master" && key === "main" && n?.payload){
         master = n.payload;
+        normalizeMaster();
         masterRowEnsured = true;
         initQtyMaps();
         renderMaster();
@@ -1454,7 +1529,7 @@
     if(error) log("rt subscribe error", error);
   }
 
-  // ===== ②再読み込み（軽量化: 並列化） =====
+  // ===== ②再読み込み =====
   async function reloadAll(){
     const u = await refreshAuthState();
     if(!u) return;
@@ -1465,7 +1540,6 @@
     try{
       await Promise.all([ loadMaster(), loadEvents() ]);
 
-      // remote draft（必要なら適用）
       const remote = await loadRemoteDraft();
       if(remote) applyDraftPayload(remote);
       else{
@@ -1499,6 +1573,7 @@
       alert("再読み込みに失敗しました。再試行してください。");
     }finally{
       autoReloadInProgress = false;
+      updateBulkBarUI();
     }
   }
 
@@ -1520,6 +1595,18 @@
     setTimeout(reloadAll, 80);
   });
 
+  $("btnFillStartMin").addEventListener("click", () => {
+    // 既に入力があるなら「上書き」か「0だけ」かを単一ボタンで選べるようにする
+    const items = master.items || [];
+    const hasNonZero = items.some(it => (it.min10||0)>0 && (start10[it.id]||0) > 0);
+    if(hasNonZero){
+      const overwrite = confirm("開始入力に既に数が入っている商品があります。\n\nOK：目安で上書き\nキャンセル：0のものだけ目安入力");
+      fillStartByMin(overwrite);
+    }else{
+      fillStartByMin(true);
+    }
+  });
+
   $("btnDraftSave").addEventListener("click", async () => {
     if(mustReload) return alert("②再読み込みが完了するまで操作できません。");
     await saveRemoteDraftNow();
@@ -1536,7 +1623,12 @@
   $("btnMetaReset").addEventListener("click", onMetaResetClick);
   $("btnUnlockMeta").addEventListener("click", () => {
     if(!confirm("⑥開始確定を取り消して、開始入力に戻しますか？（終了入力は破棄）")) return;
-    setStageStart();
+    stage = "start";
+    for(const it of (master.items||[])) end10[it.id] = null;
+    updateStageUI();
+    renderProductsFull();
+    scheduleKpis();
+    markDraftDirty("unlock meta");
   });
 
   $("btnClearFilter").addEventListener("click", () => {
@@ -1565,6 +1657,8 @@
     const name = ($("mName").value || "").trim();
     const unit = ($("mUnit").value || "本").trim() || "本";
     const cost = parseNumberSafe($("mCost").value);
+    const minN = parseNumberSafe($("mMin").value); // ★サンプルN：目安を保存
+    const min10 = (minN===null || minN<0) ? 0 : Math.max(0, to10(minN));
 
     if(!name) return alert("商品名を入れてください");
     if(cost===null || cost<0) return alert("仕入単価が不正です");
@@ -1574,6 +1668,7 @@
       name,
       unit,
       costYen: Math.round(cost),
+      min10, // ★保存される
       category: ($("mCat").value || "").trim() || null,
       note: ($("mNote").value || "").trim() || null
     };
@@ -1587,6 +1682,7 @@
     $("mCat").value = "";
     $("mNote").value = "";
 
+    normalizeMaster();
     initQtyMaps();
     renderMaster();
     renderProductsFull();
@@ -1609,7 +1705,6 @@
 
     await refreshAuthState();
 
-    // 自動②
     setMustReload(true);
     setReloadMsg("ログイン成功。②再読み込みを自動開始します…");
     if(!autoReloadInProgress){
@@ -1644,6 +1739,7 @@
     updateStageUI();
     scheduleKpis();
     scheduleEventsRender();
+    updateBulkBarUI();
 
     if(u && !autoReloadInProgress){
       autoReloadInProgress = true;
