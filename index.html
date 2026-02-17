@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="color-scheme" content="light dark" />
-  <title>宴会 見込み原価（開始/終了在庫） Sample K</title>
+  <title>宴会 見込み原価（開始/終了在庫） Sample M</title>
 
   <style>
     :root{
@@ -127,9 +127,10 @@
 <body>
 <header>
   <div class="top">
-    <h1>宴会 見込み原価（開始/終了在庫） - Sample K</h1>
+    <h1>宴会 見込み原価（開始/終了在庫） - Sample M</h1>
     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
       <button id="btnTheme" class="themeBtn" type="button">☀️ <span class="mono" style="font-size:12px;">LIGHT</span></button>
+      <button id="btnReloadNow" class="themeBtn" type="button">🔄 再読み込み</button>
       <div class="pill"><span id="authState">未ログイン</span> <span class="mono" id="deviceId">—</span></div>
     </div>
   </div>
@@ -143,7 +144,7 @@
   <div class="manualBar">
     <div class="manualLine">
       <span class="manualChip"><span class="stepNo">1</span>ログイン</span>
-      <span class="manualChip"><span class="stepNo">2</span>再読み込み（自動）</span>
+      <span class="manualChip"><span class="stepNo">2</span>再読み込み（自動/手動）</span>
       <span class="manualChip"><span class="stepNo">3</span>宴会情報</span>
       <span class="manualChip"><span class="stepNo">4</span>開始入力</span>
       <span class="manualChip"><span class="stepNo">5</span>途中保存（同期）</span>
@@ -161,7 +162,6 @@
 
 <main>
   <section id="tab-banquet" class="grid">
-
     <div class="card">
       <h2 style="margin:0 0 10px; font-size:15px;"><span class="stepNo">1</span>ログイン（店舗共通）</h2>
       <div class="row">
@@ -178,13 +178,11 @@
         <button class="primary" id="btnLogin" type="button">ログイン</button>
         <button class="ghost" id="btnLogout" type="button">ログアウト</button>
       </div>
-      <div class="small">
-        ※ログイン成功後は <b>自動で②再読み込み</b> を開始します（押し忘れ防止）。
-      </div>
+      <div class="small">※ログイン成功後は <b>自動で②再読み込み</b> を開始します。</div>
     </div>
 
     <div class="card" id="reloadCard" style="display:none;">
-      <h2 style="margin:0 0 10px; font-size:15px;"><span class="stepNo">2</span>データ再読み込み（自動）</h2>
+      <h2 style="margin:0 0 10px; font-size:15px;"><span class="stepNo">2</span>データ再読み込み（自動/手動）</h2>
       <div class="lockNote">
         <div style="flex:0 0 auto;">⚠️</div>
         <div>
@@ -199,7 +197,10 @@
     </div>
 
     <div id="appArea" class="grid locked">
-
+      <!-- ここから下は Sample K とほぼ同じ（軽量化はJS中心） -->
+      <!-- 長いので UI 部分はKと同等。商品入力/宴会一覧/マスタ/ログも同じ構造 -->
+      <!-- ※このSample Mは「動作・軽量化」実装が主目的なので、UIはK準拠 -->
+      <!-- 省略せず全部必要なら言って。 -->
       <div class="card" id="metaCard">
         <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
           <h2 style="margin:0; font-size:15px;"><span class="stepNo">3</span>宴会 情報</h2>
@@ -328,7 +329,6 @@
             <div class="small" id="productsHint">開始モード：④商品入力 → ⑥開始確定</div>
           </div>
         </div>
-
         <div class="hr"></div>
         <div id="products" class="list"></div>
         <div id="noProducts" class="small">商品マスタが空です。「商品マスタ」タブで先に登録してください。</div>
@@ -336,45 +336,17 @@
 
       <div class="card">
         <h2 style="margin:0 0 10px; font-size:15px;">宴会一覧（保存済み）＋累計</h2>
-
         <div class="row">
-          <div>
-            <label>フィルタ（開始日）</label>
-            <input id="fFrom" type="date" />
-          </div>
-          <div>
-            <label>フィルタ（終了日）</label>
-            <input id="fTo" type="date" />
-          </div>
-          <div>
-            <label>操作</label>
-            <div class="btnbar" style="margin-top:0;">
-              <button class="ghost" id="btnClearFilter" type="button">フィルタ解除</button>
-            </div>
-          </div>
+          <div><label>フィルタ（開始日）</label><input id="fFrom" type="date" /></div>
+          <div><label>フィルタ（終了日）</label><input id="fTo" type="date" /></div>
+          <div><label>操作</label><div class="btnbar" style="margin-top:0;"><button class="ghost" id="btnClearFilter" type="button">フィルタ解除</button></div></div>
         </div>
 
         <div class="kpiGrid" style="margin-top:10px;">
-          <div class="kpi">
-            <div class="t">累計 見込み原価（確定のみ）</div>
-            <div class="v mono" id="kpiSumCostComplete">¥0</div>
-            <div class="small">未入力が無い宴会のみ</div>
-          </div>
-          <div class="kpi">
-            <div class="t">累計 見込み売上（確定のみ）</div>
-            <div class="v mono" id="kpiSumSalesComplete">¥0</div>
-            <div class="small">人数×単価（未入力は除外）</div>
-          </div>
-          <div class="kpi">
-            <div class="t">累計 原価率（確定のみ）</div>
-            <div class="v mono" id="kpiSumCostRateComplete">—</div>
-            <div class="small">原価÷売上</div>
-          </div>
-          <div class="kpi">
-            <div class="t">累計 人数 / 平均（原価/人）</div>
-            <div class="v mono" id="kpiSumGuests">0</div>
-            <div class="small mono" id="kpiAvgPerHead">—</div>
-          </div>
+          <div class="kpi"><div class="t">累計 見込み原価（確定のみ）</div><div class="v mono" id="kpiSumCostComplete">¥0</div><div class="small">未入力が無い宴会のみ</div></div>
+          <div class="kpi"><div class="t">累計 見込み売上（確定のみ）</div><div class="v mono" id="kpiSumSalesComplete">¥0</div><div class="small">人数×単価（未入力は除外）</div></div>
+          <div class="kpi"><div class="t">累計 原価率（確定のみ）</div><div class="v mono" id="kpiSumCostRateComplete">—</div><div class="small">原価÷売上</div></div>
+          <div class="kpi"><div class="t">累計 人数 / 平均（原価/人）</div><div class="v mono" id="kpiSumGuests">0</div><div class="small mono" id="kpiAvgPerHead">—</div></div>
         </div>
 
         <div class="hr"></div>
@@ -388,41 +360,18 @@
   <section id="tab-master" class="grid" style="display:none;">
     <div class="card">
       <h2 style="margin:0 0 10px; font-size:15px;">商品マスタ（端末間同期）</h2>
-
       <div class="row">
-        <div>
-          <label>商品名</label>
-          <input id="mName" placeholder="例：生ビール / ハイボール / ワイン赤" />
-        </div>
-        <div>
-          <label>単位（例：本/樽/缶）</label>
-          <input id="mUnit" placeholder="例：本" />
-        </div>
+        <div><label>商品名</label><input id="mName" placeholder="例：生ビール / ハイボール / ワイン赤" /></div>
+        <div><label>単位（例：本/樽/缶）</label><input id="mUnit" placeholder="例：本" /></div>
       </div>
-
       <div class="row">
-        <div>
-          <label>仕入単価（円/1単位）</label>
-          <input id="mCost" inputmode="numeric" placeholder="例：4800" />
-        </div>
-        <div>
-          <label>最低用意数（本）</label>
-          <input id="mMin" inputmode="decimal" placeholder="例：6（0.1刻みOK）" />
-          <div class="small">不足表示に使います（開始入力の目安）。</div>
-        </div>
+        <div><label>仕入単価（円/1単位）</label><input id="mCost" inputmode="numeric" placeholder="例：4800" /></div>
+        <div><label>最低用意数（本）</label><input id="mMin" inputmode="decimal" placeholder="例：6（0.1刻みOK）" /><div class="small">不足表示に使います（開始入力の目安）。</div></div>
       </div>
-
       <div class="row">
-        <div>
-          <label>カテゴリ（任意）</label>
-          <input id="mCat" placeholder="例：BEER / WHISKY / WINE / SOFT" />
-        </div>
-        <div>
-          <label>備考（任意）</label>
-          <input id="mNote" placeholder="例：20L樽 / 700mlボトル" />
-        </div>
+        <div><label>カテゴリ（任意）</label><input id="mCat" placeholder="例：BEER / WHISKY / WINE / SOFT" /></div>
+        <div><label>備考（任意）</label><input id="mNote" placeholder="例：20L樽 / 700mlボトル" /></div>
       </div>
-
       <div class="btnbar">
         <button class="primary" id="btnAddMaster" type="button">マスタに追加</button>
         <button class="primary" id="btnSaveMaster" type="button">マスタを保存（同期）</button>
@@ -457,16 +406,12 @@
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script>
 (() => {
-  // =======================
-  // ★ここが今回の要：新ANON埋め込み済み
-  // =======================
+  // ===== Supabase =====
   const SUPABASE_URL = "https://pftjjrluhdbovoaxnykn.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBmdGpqcmx1aGRib3ZvYXhueWtuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMzUzMTUsImV4cCI6MjA4NjcxMTMxNX0.qX-LpvYcbu589h96FdxJmUEqYto64wniBcuGXraJaoU";
-  // =======================
 
   const DRAFT_KIND = "event_draft";
-  const DRAFT_KEY  = "active";
-  const LOCAL_DRAFT_KEY = "banquet_draft_k";
+  const LOCAL_DRAFT_KEY = "banquet_draft_m";
   const THEME_KEY = "banquet_theme";
   const DID_KEY = "banquet_device_id";
 
@@ -474,14 +419,11 @@
   const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   const $ = (id) => document.getElementById(id);
 
-  // -----------------------
-  // Theme (default light)
-  // -----------------------
+  // ===== Theme =====
   function applyTheme(theme){
     document.documentElement.dataset.theme = theme;
     document.documentElement.style.colorScheme = theme;
-    const btn = $("btnTheme");
-    btn.innerHTML = theme === "dark"
+    $("btnTheme").innerHTML = theme === "dark"
       ? `🌙 <span class="mono" style="font-size:12px;">DARK</span>`
       : `☀️ <span class="mono" style="font-size:12px;">LIGHT</span>`;
     localStorage.setItem(THEME_KEY, theme);
@@ -492,9 +434,7 @@
     applyTheme(now === "dark" ? "light" : "dark");
   });
 
-  // -----------------------
-  // Device id
-  // -----------------------
+  // ===== Device id =====
   function getOrCreateDeviceId(){
     let did = localStorage.getItem(DID_KEY);
     if(!did){
@@ -505,9 +445,7 @@
   }
   $("deviceId").textContent = getOrCreateDeviceId();
 
-  // -----------------------
-  // Tabs
-  // -----------------------
+  // ===== Tabs =====
   function showTab(tab){
     document.querySelectorAll(".tab").forEach(x => x.classList.remove("active"));
     document.querySelectorAll(".tab").forEach(x => { if(x.dataset.tab === tab) x.classList.add("active"); });
@@ -518,9 +456,7 @@
     btn.addEventListener("click", () => { if(btn.classList.contains("disabled")) return; showTab(btn.dataset.tab); });
   });
 
-  // -----------------------
-  // Utils
-  // -----------------------
+  // ===== Utils =====
   function log(msg, obj){
     const line = `[${new Date().toISOString()}] ${msg}` + (obj ? `\n${JSON.stringify(obj,null,2)}` : "");
     $("log").textContent = line + "\n\n" + $("log").textContent;
@@ -538,11 +474,9 @@
   function escapeHtml(s){
     return String(s ?? "").replace(/[&<>"']/g, m => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[m]));
   }
-  function scrollToMetaCard(){ const el = $("metaCard"); if(el) el.scrollIntoView({ behavior:"smooth", block:"start" }); }
+  function scrollToMetaCard(){ $("metaCard")?.scrollIntoView({ behavior:"smooth", block:"start" }); }
 
-  // -----------------------
-  // ②再読み込みロック
-  // -----------------------
+  // ===== ②再読み込みロック =====
   let mustReload = true;
   let autoReloadInProgress = false;
 
@@ -559,31 +493,54 @@
     setReloadMsg(t || (b ? "再読み込み中…" : "—"));
   }
 
-  // -----------------------
-  // App state
-  // -----------------------
+  // ===== State =====
   let master = { version:1, items:[] };
   let events = [];
-  let stage = "start"; // start/end
+  let stage = "start";
   let start10 = {};
   let end10 = {};
 
-  // draft
   let draftSavedAt = null;
   let draftSavedBy = null;
   let draftServerUpdatedAt = null;
   let draftDirty = false;
 
-  // delete-arm for events（2段階）
+  // 2段階削除（宴会）
   let armedDeleteEventKey = null;
   let armedDeleteTimer = null;
 
   // Realtime
   let rtChannel = null;
 
-  // -----------------------
-  // Auth
-  // -----------------------
+  // ===== 軽量化: rAFでまとめ描画 =====
+  let kpiRAF = 0;
+  function scheduleKpis(){
+    if(kpiRAF) return;
+    kpiRAF = requestAnimationFrame(() => {
+      kpiRAF = 0;
+      updateAllKpisNow();
+    });
+  }
+
+  let eventsRAF = 0;
+  function scheduleEventsRender(){
+    if(eventsRAF) return;
+    eventsRAF = requestAnimationFrame(() => {
+      eventsRAF = 0;
+      renderEventsNow();
+    });
+  }
+
+  // ===== 軽量化: localStorage保存デバウンス =====
+  let localSaveTimer = null;
+  function scheduleLocalDraftSave(){
+    clearTimeout(localSaveTimer);
+    localSaveTimer = setTimeout(() => {
+      localStorage.setItem(LOCAL_DRAFT_KEY, JSON.stringify(buildDraftPayload()));
+    }, 350);
+  }
+
+  // ===== Auth =====
   async function getUser(){
     const { data } = await sb.auth.getUser();
     return data?.user || null;
@@ -594,12 +551,13 @@
     return u;
   }
 
-  // -----------------------
-  // Master row ensure/load/save
-  // -----------------------
+  // ===== Master =====
+  let masterRowEnsured = false;
   async function ensureMasterRow(){
     const u = await getUser();
     if(!u) throw new Error("not logged in");
+
+    if(masterRowEnsured) return { payload: master };
 
     const { data, error } = await sb
       .from("docs")
@@ -618,8 +576,10 @@
         .select("payload")
         .single();
       if(ins.error) throw ins.error;
+      masterRowEnsured = true;
       return ins.data;
     }
+    masterRowEnsured = true;
     return data;
   }
 
@@ -641,8 +601,8 @@
     master = row.payload || { version:1, items:[] };
     initQtyMaps();
     renderMaster();
-    renderProducts();
-    updateAllKpis();
+    renderProductsFull();
+    scheduleKpis();
   }
 
   async function saveMaster(){
@@ -661,9 +621,7 @@
     alert("マスタを保存して同期しました");
   }
 
-  // -----------------------
-  // Draft (local + remote)
-  // -----------------------
+  // ===== Draft =====
   function buildDraftPayload(){
     const guests = parseIntSafe($("evGuests").value);
     const per = parseIntSafe($("evDrinkPrice").value);
@@ -718,14 +676,12 @@
     initQtyMaps();
     updateDurationUI();
     updateStageUI();
-    renderProducts();
-    updateAllKpis();
+    renderProductsFull(); // ステージやロックを反映するのでここは全描画
+    scheduleKpis();
     updateDraftInfoUI("適用");
+    scheduleLocalDraftSave();
   }
 
-  function saveLocalDraftNow(){
-    localStorage.setItem(LOCAL_DRAFT_KEY, JSON.stringify(buildDraftPayload()));
-  }
   function loadLocalDraft(){
     const raw = localStorage.getItem(LOCAL_DRAFT_KEY);
     if(!raw) return null;
@@ -760,6 +716,7 @@
     if(error){
       log("saveRemoteDraft error", error);
       updateDraftInfoUI("同期失敗（ローカル保存済み）");
+      scheduleLocalDraftSave();
       return;
     }
 
@@ -767,18 +724,13 @@
     draftSavedBy = payload.savedBy;
     draftServerUpdatedAt = data?.updated_at || null;
     draftDirty = false;
-    saveLocalDraftNow();
+
     updateDraftInfoUI("同期済み");
+    scheduleLocalDraftSave();
   }
 
   async function deleteRemoteDraft(){
     await sb.from("docs").delete().eq("kind", DRAFT_KIND).eq("doc_key","active");
-  }
-
-  function markDraftDirty(reason){
-    draftDirty = true;
-    updateDraftInfoUI(reason ? ("dirty:"+reason) : "dirty");
-    saveLocalDraftNow();
   }
 
   function updateDraftInfoUI(extra){
@@ -797,9 +749,13 @@
     if(!draftDirty && draftSavedAt) dot.classList.add("ok");
   }
 
-  // -----------------------
-  // Meta + stage
-  // -----------------------
+  function markDraftDirty(reason){
+    draftDirty = true;
+    updateDraftInfoUI(reason ? ("dirty:"+reason) : "dirty");
+    scheduleLocalDraftSave();
+  }
+
+  // ===== Meta + Stage =====
   function updateDurationUI(){
     const ext = Math.max(0, parseIntSafe($("evExt").value) || 0);
     $("evDuration").textContent = `${90 + 30*ext}分`;
@@ -836,9 +792,7 @@
       : "※③→④→⑥の流れで開始確定。⑤で途中保存（同期）できます。";
   }
 
-  // -----------------------
-  // Calc / KPIs
-  // -----------------------
+  // ===== Calc / KPIs =====
   function calcAgg(){
     let total = 0;
     let usedItemCount = 0;
@@ -849,8 +803,8 @@
       const s10 = start10[it.id] || 0;
       const e10 = end10[it.id];
       if(s10>0 && (e10===null || e10===undefined)) missingEnds++;
-
       if(e10===null || e10===undefined) continue;
+
       const used10 = s10 - e10;
       if(used10 < 0) negativeCount++;
       const used = used10/10;
@@ -862,7 +816,7 @@
     return { total, usedItemCount, missingEnds, negativeCount };
   }
 
-  function updateAllKpis(){
+  function updateAllKpisNow(){
     const a = calcAgg();
     $("kpiThisCost").textContent = yen(a.total);
     $("kpiThisItems").textContent = String(a.usedItemCount);
@@ -883,14 +837,19 @@
 
     $("kpiThisStatus").textContent =
       (stage === "start") ? "状態：④開始入力中" : (a.missingEnds===0 ? "状態：確定（⑧保存可）" : "状態：未確定（終了未入力あり）");
-
-    updateDraftInfoUI("");
   }
 
-  // -----------------------
-  // Products render
-  // -----------------------
-  function renderProducts(){
+  // ===== Products: 全描画（ステージ切替/マスタ更新時） =====
+  function usedInfoForItem(it){
+    const s10 = start10[it.id] || 0;
+    const e10 = end10[it.id];
+    const used10 = (e10===null || e10===undefined) ? null : (s10 - e10);
+    const usedText = (used10===null) ? "—" : (used10/10).toFixed(1);
+    const usedClass = (used10===null) ? "missing" : (used10<0 ? "negative" : "");
+    return { s10, e10, usedText, usedClass };
+  }
+
+  function renderProductsFull(){
     const items = master.items || [];
     $("noProducts").style.display = items.length ? "none" : "";
 
@@ -901,20 +860,14 @@
       if(start10[it.id]===undefined) start10[it.id]=0;
       if(end10[it.id]===undefined) end10[it.id]=null;
 
-      const s10 = start10[it.id] || 0;
-      const e10 = end10[it.id];
-      const used10 = (e10===null || e10===undefined) ? null : (s10 - e10);
-      const usedText = (used10===null) ? "—" : (used10/10).toFixed(1);
-      const usedClass = (used10===null) ? "missing" : (used10<0 ? "negative" : "");
+      const info = usedInfoForItem(it);
 
       const row = document.createElement("div");
       row.className = "prodRow";
       row.innerHTML = `
         <div>
           <div class="prodName">${escapeHtml(it.name)}</div>
-          <div class="prodMeta">
-            単価 ${yen(Number(it.costYen||0))} / 単位 ${escapeHtml(it.unit||"本")}
-          </div>
+          <div class="prodMeta">単価 ${yen(Number(it.costYen||0))} / 単位 ${escapeHtml(it.unit||"本")}</div>
         </div>
 
         <div class="controls" data-itemid="${escapeHtml(it.id)}">
@@ -922,11 +875,11 @@
             stage==="start"
             ? `
               <div class="ctrlBox startBox">
-                <div class="ctrlTitle"><span>開始（入力）</span><span class="mono">${(s10/10).toFixed(1)}</span></div>
+                <div class="ctrlTitle"><span>開始（入力）</span><span class="mono" data-role="startLabel">${(info.s10/10).toFixed(1)}</span></div>
                 <div class="ctrlGrid">
                   <div class="stepBtn" data-act="step" data-field="start" data-step="-10">−1</div>
                   <div class="stepBtn" data-act="step" data-field="start" data-step="-1">−0.1</div>
-                  <input class="qtyInput" data-role="startInput" inputmode="decimal" value="${(s10/10).toFixed(1)}" />
+                  <input class="qtyInput" data-role="startInput" inputmode="decimal" value="${(info.s10/10).toFixed(1)}" />
                   <div class="stepBtn primary" data-act="step" data-field="start" data-step="1">+0.1</div>
                   <div class="stepBtn primary" data-act="step" data-field="start" data-step="10">+1</div>
                 </div>
@@ -934,8 +887,8 @@
             `
             : `
               <div class="ctrlBox startBox readonly">
-                <div class="ctrlTitle"><span>開始（固定）</span><span class="mono">${(s10/10).toFixed(1)}</span></div>
-                <div class="roQty mono">${(s10/10).toFixed(1)}</div>
+                <div class="ctrlTitle"><span>開始（固定）</span><span class="mono" data-role="startLabel">${(info.s10/10).toFixed(1)}</span></div>
+                <div class="roQty mono" data-role="startRO">${(info.s10/10).toFixed(1)}</div>
                 <div class="small">開始は変更できません</div>
               </div>
             `
@@ -945,11 +898,11 @@
             stage==="end"
             ? `
               <div class="ctrlBox endBox">
-                <div class="ctrlTitle"><span>終了（入力）</span><span class="mono">${(e10===null || e10===undefined) ? "—" : (e10/10).toFixed(1)}</span></div>
+                <div class="ctrlTitle"><span>終了（入力）</span><span class="mono" data-role="endLabel">${(info.e10===null || info.e10===undefined) ? "—" : (info.e10/10).toFixed(1)}</span></div>
                 <div class="ctrlGrid">
                   <div class="stepBtn" data-act="step" data-field="end" data-step="-10">−1</div>
                   <div class="stepBtn" data-act="step" data-field="end" data-step="-1">−0.1</div>
-                  <input class="qtyInput" data-role="endInput" inputmode="decimal" value="${(e10===null || e10===undefined) ? "" : (e10/10).toFixed(1)}" placeholder="—" />
+                  <input class="qtyInput" data-role="endInput" inputmode="decimal" value="${(info.e10===null || info.e10===undefined) ? "" : (info.e10/10).toFixed(1)}" placeholder="—" />
                   <div class="stepBtn primary" data-act="step" data-field="end" data-step="1">+0.1</div>
                   <div class="stepBtn primary" data-act="step" data-field="end" data-step="10">+1</div>
                 </div>
@@ -957,7 +910,7 @@
             `
             : `
               <div class="ctrlBox endBox readonly">
-                <div class="ctrlTitle"><span>終了（後で）</span><span class="mono">—</span></div>
+                <div class="ctrlTitle"><span>終了（後で）</span><span class="mono" data-role="endLabel">—</span></div>
                 <div class="roQty mono">—</div>
                 <div class="small">⑥開始確定後に入力します</div>
               </div>
@@ -966,18 +919,58 @@
 
           <div class="usedBox">
             <div class="usedLine">使用（開始−終了）</div>
-            <div class="usedVal ${usedClass} mono">${usedText}</div>
+            <div class="usedVal ${info.usedClass} mono" data-role="usedVal">${info.usedText}</div>
           </div>
         </div>
       `;
       box.appendChild(row);
     }
+  }
 
-    // Event delegation
-    box.onclick = (ev) => {
+  // ===== Products: 変更行だけ更新（軽量化） =====
+  function updateProductRow(itemId){
+    const ctrl = document.querySelector(`.controls[data-itemid="${CSS.escape(itemId)}"]`);
+    if(!ctrl) return;
+
+    const it = (master.items||[]).find(x => x.id === itemId);
+    if(!it) return;
+
+    const info = usedInfoForItem(it);
+
+    const startLabel = ctrl.querySelector('[data-role="startLabel"]');
+    if(startLabel) startLabel.textContent = (info.s10/10).toFixed(1);
+
+    const startInput = ctrl.querySelector('[data-role="startInput"]');
+    if(startInput && stage==="start") startInput.value = (info.s10/10).toFixed(1);
+
+    const startRO = ctrl.querySelector('[data-role="startRO"]');
+    if(startRO && stage==="end") startRO.textContent = (info.s10/10).toFixed(1);
+
+    const endLabel = ctrl.querySelector('[data-role="endLabel"]');
+    if(endLabel) endLabel.textContent = (info.e10===null || info.e10===undefined) ? "—" : (info.e10/10).toFixed(1);
+
+    const endInput = ctrl.querySelector('[data-role="endInput"]');
+    if(endInput && stage==="end"){
+      endInput.value = (info.e10===null || info.e10===undefined) ? "" : (info.e10/10).toFixed(1);
+    }
+
+    const usedVal = ctrl.querySelector('[data-role="usedVal"]');
+    if(usedVal){
+      usedVal.textContent = info.usedText;
+      usedVal.classList.remove("missing","negative");
+      if(info.usedClass) usedVal.classList.add(info.usedClass);
+    }
+  }
+
+  // ===== Products event delegation（一度だけ） =====
+  function bindProductsDelegationOnce(){
+    const box = $("products");
+
+    box.addEventListener("click", (ev) => {
       if(mustReload) return;
       const btn = ev.target.closest('[data-act="step"]');
       if(!btn) return;
+
       const ctrl = btn.closest(".controls");
       const itemId = ctrl.getAttribute("data-itemid");
       const step = parseInt(btn.getAttribute("data-step"),10) || 0;
@@ -991,27 +984,27 @@
         const now = (end10[itemId]===null || end10[itemId]===undefined) ? 0 : (end10[itemId]||0);
         end10[itemId] = Math.max(0, now + step);
       }
-      renderProducts();
-      updateAllKpis();
-      markDraftDirty("step");
-    };
 
-    box.onchange = (ev) => {
+      updateProductRow(itemId);
+      scheduleKpis();
+      markDraftDirty("step");
+    });
+
+    box.addEventListener("change", (ev) => {
       if(mustReload) return;
       const inp = ev.target.closest(".qtyInput");
       if(!inp) return;
+
       const ctrl = inp.closest(".controls");
       const itemId = ctrl.getAttribute("data-itemid");
-
-      const isStart = inp.getAttribute("data-role")==="startInput";
-      const isEnd   = inp.getAttribute("data-role")==="endInput";
+      const role = inp.getAttribute("data-role");
       const val = (inp.value||"").trim();
 
-      if(isStart){
+      if(role==="startInput"){
         if(stage!=="start") return;
         const n = parseNumberSafe(val);
         start10[itemId] = Math.max(0, to10(n||0));
-      }else if(isEnd){
+      }else if(role==="endInput"){
         if(stage!=="end") return;
         if(val==="") end10[itemId] = null;
         else{
@@ -1019,15 +1012,14 @@
           end10[itemId] = Math.max(0, to10(n||0));
         }
       }
-      renderProducts();
-      updateAllKpis();
+
+      updateProductRow(itemId);
+      scheduleKpis();
       markDraftDirty("input");
-    };
+    });
   }
 
-  // -----------------------
-  // Master UI
-  // -----------------------
+  // ===== Master UI =====
   function renderMaster(){
     const box = $("masterList");
     box.innerHTML = "";
@@ -1057,21 +1049,19 @@
         delete end10[it.id];
         initQtyMaps();
         renderMaster();
-        renderProducts();
-        updateAllKpis();
+        renderProductsFull();
+        scheduleKpis();
         markDraftDirty("master del");
       });
       box.appendChild(el);
     }
   }
 
-  // -----------------------
-  // Events load/render + delete (2-step)
-  // -----------------------
+  // ===== Events load/render/delete =====
   async function loadEvents(){
     const { data, error } = await sb
       .from("docs")
-      .select("doc_key, payload, created_at, updated_at")
+      .select("doc_key, payload, created_at, updated_at, kind, user_id")
       .eq("kind","event")
       .order("created_at",{ ascending:false })
       .limit(400);
@@ -1079,7 +1069,7 @@
     if(error){ log("loadEvents error", error); return; }
     events = data || [];
     $("eventsCount").textContent = String(events.length);
-    renderEvents();
+    scheduleEventsRender();
   }
 
   function disarmEventDelete(){
@@ -1103,14 +1093,12 @@
       log("deleteEvent error", error);
       return alert("削除に失敗: " + error.message);
     }
-
-    // ローカルからも除外（Realtimeが来てもOK）
     events = events.filter(e => e.doc_key !== docKey);
     $("eventsCount").textContent = String(events.length);
-    renderEvents();
+    scheduleEventsRender();
   }
 
-  function renderEvents(){
+  function renderEventsNow(){
     const box = $("events");
     box.innerHTML = "";
 
@@ -1151,7 +1139,6 @@
       const rate = (sales && sales>0) ? (cost/sales) : null;
 
       const badge = isComplete ? `<span class="badge">確定</span>` : `<span class="badge warn">未確定（未入力${missingEnds}）</span>`;
-
       const armed = (armedDeleteEventKey === e.doc_key);
       const delText = armed ? "もう一度で完全削除" : "削除";
       const delClass = armed ? "danger" : "ghost";
@@ -1180,19 +1167,18 @@
 
       el.querySelector('[data-act="delEvent"]').addEventListener("click", async () => {
         if(mustReload) return alert("②再読み込みが完了するまで操作できません。");
-
         const key = e.doc_key;
+
         if(armedDeleteEventKey !== key){
           disarmEventDelete();
           armedDeleteEventKey = key;
-          armedDeleteTimer = setTimeout(() => { disarmEventDelete(); renderEvents(); }, 7000);
-          renderEvents();
+          armedDeleteTimer = setTimeout(() => { disarmEventDelete(); scheduleEventsRender(); }, 7000);
+          scheduleEventsRender();
           return;
         }
 
-        // 2段階目：最終確認
         disarmEventDelete();
-        renderEvents();
+        scheduleEventsRender();
         if(!confirm("この宴会データをSupabaseから完全削除します。\n取り消しできません。よろしいですか？")) return;
         await deleteEvent(key);
       });
@@ -1207,23 +1193,21 @@
     $("kpiAvgPerHead").textContent = (sumGuests>0) ? `平均（原価/人） ${yen(sumCost/sumGuests)}` : "—";
   }
 
-  // -----------------------
-  // Flow actions
-  // -----------------------
+  // ===== Flow =====
   function setStageStart(){
     stage = "start";
     for(const it of (master.items||[])) end10[it.id] = null;
     updateStageUI();
-    renderProducts();
-    updateAllKpis();
+    renderProductsFull();
+    scheduleKpis();
     markDraftDirty("stage start");
   }
   function setStageEnd(){
     stage = "end";
     for(const it of (master.items||[])) if(end10[it.id]===undefined) end10[it.id] = null;
     updateStageUI();
-    renderProducts();
-    updateAllKpis();
+    renderProductsFull();
+    scheduleKpis();
     markDraftDirty("stage end");
   }
 
@@ -1289,7 +1273,6 @@
     await deleteRemoteDraft();
     clearLocalDraft();
 
-    // 次の宴会へ初期化
     stage = "start";
     $("evDate").value = todayISO();
     $("evGuests").value = "";
@@ -1309,16 +1292,16 @@
 
     updateDurationUI();
     updateStageUI();
-    renderProducts();
-    updateAllKpis();
+    renderProductsFull();
+    scheduleKpis();
+
+    // 軽量化：ここで全再取得しなくてもRealtimeで入るが、確実性のため1回だけ
     await loadEvents();
 
     alert("⑧宴会を保存しました。");
   }
 
-  // -----------------------
-  // ③宴会情報リセット（2段階）
-  // -----------------------
+  // ===== ③宴会情報リセット（2段階） =====
   let metaResetArmed = false;
   let metaResetTimer = null;
 
@@ -1338,7 +1321,7 @@
     $("evStyle").value = "seated";
     $("evStaff").value = "";
     updateDurationUI();
-    updateAllKpis();
+    scheduleKpis();
     markDraftDirty("meta reset");
   }
 
@@ -1390,14 +1373,12 @@
 
     updateDurationUI();
     updateStageUI();
-    renderProducts();
-    updateAllKpis();
+    renderProductsFull();
+    scheduleKpis();
     updateDraftInfoUI("削除済み");
   }
 
-  // -----------------------
-  // Realtime（最低限）
-  // -----------------------
+  // ===== Realtime（軽量化: 差分反映） =====
   function stopRealtime(){
     if(rtChannel){
       sb.removeChannel(rtChannel);
@@ -1406,37 +1387,65 @@
     $("rtState").textContent = "OFF";
   }
 
+  function upsertEventRow(row){
+    if(!row) return;
+    const idx = events.findIndex(e => e.doc_key === row.doc_key);
+    if(idx >= 0) events[idx] = row;
+    else events.unshift(row);
+    $("eventsCount").textContent = String(events.length);
+    scheduleEventsRender();
+  }
+
+  function deleteEventRow(oldRow){
+    const key = oldRow?.doc_key;
+    if(!key) return;
+    events = events.filter(e => e.doc_key !== key);
+    $("eventsCount").textContent = String(events.length);
+    scheduleEventsRender();
+  }
+
   async function startRealtime(){
     stopRealtime();
     const u = await getUser();
     if(!u) return;
 
-    rtChannel = sb.channel("docs-rt-k");
+    rtChannel = sb.channel("docs-rt-m");
     rtChannel.on("postgres_changes", {
       event:"*",
       schema:"public",
       table:"docs",
       filter:`user_id=eq.${u.id}`
-    }, async (payload) => {
+    }, (payload) => {
       $("rtState").textContent = "ON";
 
+      const evType = payload.eventType;
       const n = payload.new || null;
       const o = payload.old || null;
-      const kind = (n && n.kind) ? n.kind : (o && o.kind) ? o.kind : null;
-      const key  = (n && n.doc_key) ? n.doc_key : (o && o.doc_key) ? o.doc_key : null;
 
-      if(kind==="master" && key==="main"){
-        await loadMaster();
+      const kind = n?.kind ?? o?.kind ?? null;
+      const key  = n?.doc_key ?? o?.doc_key ?? null;
+
+      if(kind === "master" && key === "main" && n?.payload){
+        master = n.payload;
+        masterRowEnsured = true;
+        initQtyMaps();
+        renderMaster();
+        renderProductsFull();
+        scheduleKpis();
         return;
       }
-      if(kind===DRAFT_KIND && key==="active"){
-        const remote = await loadRemoteDraft();
-        if(remote) applyDraftPayload(remote);
+
+      if(kind === DRAFT_KIND && key === "active"){
+        if(n?.payload){
+          draftServerUpdatedAt = n.updated_at || payload.commit_timestamp || draftServerUpdatedAt;
+          applyDraftPayload(n.payload);
+        }
         return;
       }
-      if(kind==="event"){
-        // 一覧はシンプルに再取得（削除反映確実）
-        await loadEvents();
+
+      if(kind === "event"){
+        if(evType === "DELETE") deleteEventRow(o);
+        else if(evType === "INSERT" || evType === "UPDATE") upsertEventRow(n);
         return;
       }
     });
@@ -1445,9 +1454,7 @@
     if(error) log("rt subscribe error", error);
   }
 
-  // -----------------------
-  // ★②再読み込み（自動実行）
-  // -----------------------
+  // ===== ②再読み込み（軽量化: 並列化） =====
   async function reloadAll(){
     const u = await refreshAuthState();
     if(!u) return;
@@ -1456,24 +1463,23 @@
     setReloadBusy(true, "②再読み込み中…（master / draft / events）");
 
     try{
-      await loadMaster();
-      await loadEvents();
+      await Promise.all([ loadMaster(), loadEvents() ]);
 
+      // remote draft（必要なら適用）
       const remote = await loadRemoteDraft();
       if(remote) applyDraftPayload(remote);
       else{
         const local = loadLocalDraft();
         if(local) applyDraftPayload(local);
         else{
-          // 初期
           $("evDate").value = todayISO();
           $("evExt").value = "0";
           updateDurationUI();
           initQtyMaps();
           updateStageUI();
-          renderProducts();
-          updateAllKpis();
-          saveLocalDraftNow();
+          renderProductsFull();
+          scheduleKpis();
+          scheduleLocalDraftSave();
         }
       }
 
@@ -1482,7 +1488,6 @@
       setReloadBusy(false, "完了 ✅ ③へ移動します…");
       setMustReload(false);
 
-      // ✅ 要件：②完了後に③へ自動スクロール
       setTimeout(() => {
         showTab("banquet");
         scrollToMetaCard();
@@ -1497,18 +1502,30 @@
     }
   }
 
-  // -----------------------
-  // Wiring
-  // -----------------------
-  $("btnReloadRetry").addEventListener("click", reloadAll);
+  // ===== Wiring =====
+  $("btnReloadRetry").addEventListener("click", () => {
+    if(autoReloadInProgress) return;
+    autoReloadInProgress = true;
+    reloadAll();
+  });
+
+  $("btnReloadNow").addEventListener("click", async () => {
+    const u = await getUser();
+    if(!u) return alert("先にログインしてください");
+    if(autoReloadInProgress) return;
+    setMustReload(true);
+    setReloadMsg("手動で②再読み込みを開始します…");
+    autoReloadInProgress = true;
+    window.scrollTo({ top:0, behavior:"smooth" });
+    setTimeout(reloadAll, 80);
+  });
 
   $("btnDraftSave").addEventListener("click", async () => {
     if(mustReload) return alert("②再読み込みが完了するまで操作できません。");
-    await saveRemoteDraftNow(); // ★⑤ 途中保存（同期）
+    await saveRemoteDraftNow();
   });
 
   $("btnDraftClear").addEventListener("click", clearDraftAll);
-
   $("btnConfirmStart").addEventListener("click", confirmStart);
   $("btnBackToStart").addEventListener("click", backToStart);
   $("btnFinishEvent").addEventListener("click", finishEvent);
@@ -1525,10 +1542,10 @@
   $("btnClearFilter").addEventListener("click", () => {
     $("fFrom").value = "";
     $("fTo").value = "";
-    renderEvents();
+    scheduleEventsRender();
   });
-  $("fFrom").addEventListener("change", renderEvents);
-  $("fTo").addEventListener("change", renderEvents);
+  $("fFrom").addEventListener("change", scheduleEventsRender);
+  $("fTo").addEventListener("change", scheduleEventsRender);
 
   $("btnDump").addEventListener("click", () => {
     log("DUMP", { master, stage, start10, end10, eventsCount: events.length });
@@ -1537,7 +1554,7 @@
   ["evDate","evGuests","evDrinkPrice","evExt","evStyle","evStaff"].forEach(id => {
     $(id).addEventListener("change", () => {
       updateDurationUI();
-      updateAllKpis();
+      scheduleKpis();
       markDraftDirty("meta");
     });
   });
@@ -1572,14 +1589,13 @@
 
     initQtyMaps();
     renderMaster();
-    renderProducts();
-    updateAllKpis();
+    renderProductsFull();
+    scheduleKpis();
     markDraftDirty("master add");
   });
 
   $("btnSaveMaster").addEventListener("click", saveMaster);
 
-  // login/logout
   $("btnLogin").addEventListener("click", async () => {
     const email = $("email").value.trim();
     const password = $("pw").value;
@@ -1593,7 +1609,7 @@
 
     await refreshAuthState();
 
-    // ✅ 要件：ログイン後 自動で②再読み込み
+    // 自動②
     setMustReload(true);
     setReloadMsg("ログイン成功。②再読み込みを自動開始します…");
     if(!autoReloadInProgress){
@@ -1612,23 +1628,23 @@
     alert("ログアウトしました");
   });
 
-  // -----------------------
-  // Startup
-  // -----------------------
+  // ===== Startup =====
   (async () => {
     $("evDate").value = todayISO();
     $("evExt").value = "0";
     updateDurationUI();
 
+    bindProductsDelegationOnce();
+
     const u = await refreshAuthState();
     setMustReload(true);
     setReloadMsg(u ? "セッションあり。②再読み込みを自動開始します…" : "未ログインです。①から。");
 
-    renderProducts();
+    renderProductsFull();
     updateStageUI();
-    updateAllKpis();
+    scheduleKpis();
+    scheduleEventsRender();
 
-    // セッションがあれば、起動時も②を自動（押し忘れ防止）
     if(u && !autoReloadInProgress){
       autoReloadInProgress = true;
       setTimeout(reloadAll, 80);
