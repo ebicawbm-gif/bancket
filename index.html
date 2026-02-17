@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="color-scheme" content="light dark" />
-  <title>宴会 見込み原価（開始/終了在庫） Sample N</title>
+  <title>宴会 見込み原価（開始/終了在庫） Sample O</title>
 
   <style>
     :root{
@@ -116,6 +116,10 @@
     .usedVal.negative{ color:var(--danger); }
     .usedVal.missing{ color:var(--warn); }
 
+    .editBox{ border:1px dashed color-mix(in oklab, var(--text) 18%, transparent); border-radius:14px; padding:12px; margin-top:10px;
+      background: color-mix(in oklab, var(--card) 90%, var(--bg)); }
+    .editTitle{ font-weight:900; font-size:13px; margin:0 0 8px; }
+
     @media (max-width: 980px){
       .prodRow{ grid-template-columns: 1fr; }
       .controls{ grid-template-columns: 1fr; }
@@ -127,7 +131,7 @@
 <body>
 <header>
   <div class="top">
-    <h1>宴会 見込み原価（開始/終了在庫） - Sample N</h1>
+    <h1>宴会 見込み原価（開始/終了在庫） - Sample O</h1>
     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
       <button id="btnTheme" class="themeBtn" type="button">☀️ <span class="mono" style="font-size:12px;">LIGHT</span></button>
       <button id="btnReloadNow" class="themeBtn" type="button">🔄 再読み込み</button>
@@ -327,7 +331,6 @@
           </div>
         </div>
 
-        <!-- ★サンプルN：目安一括入力ボタン（開始時だけ表示） -->
         <div class="btnbar" id="bulkStartBar" style="margin-top:8px; display:none;">
           <button class="primary" id="btnFillStartMin" type="button">④ 目安を開始に一括入力</button>
           <span class="small">※OK=目安で上書き / キャンセル=0のものだけ目安入力</span>
@@ -388,7 +391,9 @@
     </div>
 
     <div class="card">
-      <h2 style="margin:0 0 10px; font-size:15px;">登録済みマスタ</h2>
+      <h2 style="margin:0 0 10px; font-size:15px;">登録済みマスタ（編集OK）</h2>
+      <div class="small">「編集」→内容変更→「更新」（必要なら「更新して同期」）</div>
+      <div class="hr"></div>
       <div id="masterList" class="list"></div>
       <div id="noMaster" class="small">マスタが空です。</div>
     </div>
@@ -419,7 +424,7 @@
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBmdGpqcmx1aGRib3ZvYXhueWtuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMzUzMTUsImV4cCI6MjA4NjcxMTMxNX0.qX-LpvYcbu589h96FdxJmUEqYto64wniBcuGXraJaoU";
 
   const DRAFT_KIND = "event_draft";
-  const LOCAL_DRAFT_KEY = "banquet_draft_n";
+  const LOCAL_DRAFT_KEY = "banquet_draft_o";
   const THEME_KEY = "banquet_theme";
   const DID_KEY = "banquet_device_id";
 
@@ -518,6 +523,9 @@
 
   let rtChannel = null;
 
+  // ★サンプルO：マスタ編集状態（どの商品を編集してるか）
+  let editingMasterId = null;
+
   // ===== rAF/デバウンス =====
   let kpiRAF = 0;
   function scheduleKpis(){
@@ -589,6 +597,7 @@
   function normalizeMaster(){
     master = master || { version:1, items:[] };
     master.items = (master.items || []).map(it => {
+      // 既存データ救済：min10が無ければ0扱い
       const min10 = Number.isFinite(Number(it.min10)) ? Math.max(0, Math.trunc(it.min10)) : 0;
       return { ...it, min10 };
     });
@@ -1061,7 +1070,7 @@
     });
   }
 
-  // ★サンプルN：目安一括入力（開始）
+  // 目安一括入力（開始）
   function fillStartByMin(overwrite){
     if(stage !== "start") return alert("目安一括入力は開始（④）のときだけ使えます。");
     if(mustReload) return alert("②再読み込みが完了するまで操作できません。");
@@ -1076,7 +1085,7 @@
       applied++;
 
       const cur = start10[it.id] || 0;
-      if(!overwrite && cur > 0) continue; // 0以外は触らない
+      if(!overwrite && cur > 0) continue;
 
       if(cur !== min10){
         start10[it.id] = min10;
@@ -1087,7 +1096,6 @@
     if(applied === 0) return alert("マスタの目安（最低用意数）が入っている商品がありません。");
     if(changed === 0) return alert("変更はありません（すでに目安が反映済み、または0以外は維持）。");
 
-    // まとめて更新（120件想定でもOK）
     for(const it of items){
       if((it.min10||0) > 0) updateProductRow(it.id);
     }
@@ -1096,7 +1104,11 @@
     alert(`目安を開始に反映しました（変更: ${changed} 商品）`);
   }
 
-  // ===== Master UI =====
+  // ===== Master UI（★サンプルO：編集対応） =====
+  function findMasterItem(id){
+    return (master.items||[]).find(x => x.id === id) || null;
+  }
+
   function renderMaster(){
     const box = $("masterList");
     box.innerHTML = "";
@@ -1106,6 +1118,7 @@
     for(const it of items){
       const min10 = it.min10 || 0;
       const minTxt = (min10>0) ? (min10/10).toFixed(1) : "—";
+      const isEditing = (editingMasterId === it.id);
 
       const el = document.createElement("div");
       el.className = "item";
@@ -1117,14 +1130,48 @@
               単位：${escapeHtml(it.unit||"本")}
               / 単価：<span class="mono">${yen(Number(it.costYen||0))}</span>
               / 目安：<span class="mono">${escapeHtml(minTxt)}</span>
+              ${it.category ? `/ カテゴリ：${escapeHtml(it.category)}` : ``}
+              ${it.note ? `/ 備考：${escapeHtml(it.note)}` : ``}
             </div>
           </div>
-          <div><span class="badge">ID: ${escapeHtml(it.id)}</span></div>
+          <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
+            <span class="badge">ID: ${escapeHtml(it.id)}</span>
+            <div class="btnbar" style="margin-top:0;">
+              <button class="ghost" data-act="edit" type="button">${isEditing ? "編集を閉じる" : "編集"}</button>
+              <button class="danger" data-act="del" type="button">削除</button>
+            </div>
+          </div>
         </div>
-        <div class="btnbar">
-          <button class="danger" data-act="del" type="button">削除</button>
+
+        <div class="editBox" style="display:${isEditing ? "" : "none"};">
+          <div class="editTitle">編集（この変更は「マスタを保存（同期）」で端末間反映）</div>
+          <div class="row">
+            <div><label>商品名</label><input data-edit="name" value="${escapeHtml(it.name)}" /></div>
+            <div><label>単位</label><input data-edit="unit" value="${escapeHtml(it.unit||"本")}" /></div>
+          </div>
+          <div class="row">
+            <div><label>仕入単価（円）</label><input data-edit="cost" inputmode="numeric" value="${escapeHtml(String(it.costYen ?? 0))}" /></div>
+            <div><label>最低用意数（目安）</label><input data-edit="min" inputmode="decimal" value="${escapeHtml(String((it.min10||0)/10))}" /></div>
+          </div>
+          <div class="row">
+            <div><label>カテゴリ（任意）</label><input data-edit="cat" value="${escapeHtml(it.category||"")}" /></div>
+            <div><label>備考（任意）</label><input data-edit="note" value="${escapeHtml(it.note||"")}" /></div>
+          </div>
+          <div class="btnbar">
+            <button class="primary" data-act="apply" type="button">更新</button>
+            <button class="primary" data-act="applySync" type="button">更新して同期</button>
+            <button class="ghost" data-act="cancel" type="button">キャンセル</button>
+          </div>
+          <div class="small">※IDは変えません（開始/終了の紐付けが切れるため）</div>
         </div>
       `;
+
+      el.querySelector('[data-act="edit"]').addEventListener("click", () => {
+        if(mustReload) return alert("②再読み込みが完了するまで操作できません。");
+        editingMasterId = (editingMasterId === it.id) ? null : it.id;
+        renderMaster();
+      });
+
       el.querySelector('[data-act="del"]').addEventListener("click", () => {
         if(mustReload) return alert("②再読み込みが完了するまで操作できません。");
         if(!confirm(`「${it.name}」を削除しますか？`)) return;
@@ -1132,16 +1179,63 @@
         delete start10[it.id];
         delete end10[it.id];
         initQtyMaps();
+        if(editingMasterId === it.id) editingMasterId = null;
         renderMaster();
         renderProductsFull();
         scheduleKpis();
         markDraftDirty("master del");
       });
+
+      const applyEdit = async (doSync) => {
+        if(mustReload) return alert("②再読み込みが完了するまで操作できません。");
+        const cur = findMasterItem(it.id);
+        if(!cur) return;
+
+        const name = (el.querySelector('[data-edit="name"]').value || "").trim();
+        const unit = (el.querySelector('[data-edit="unit"]').value || "").trim() || "本";
+        const costN = parseNumberSafe(el.querySelector('[data-edit="cost"]').value);
+        const minN  = parseNumberSafe(el.querySelector('[data-edit="min"]').value);
+        const cat   = (el.querySelector('[data-edit="cat"]').value || "").trim();
+        const note  = (el.querySelector('[data-edit="note"]').value || "").trim();
+
+        if(!name) return alert("商品名は必須です");
+        if(costN === null || costN < 0) return alert("仕入単価が不正です");
+        if(minN !== null && minN < 0) return alert("目安は0以上にして");
+
+        cur.name = name;
+        cur.unit = unit;
+        cur.costYen = Math.round(costN);
+        cur.min10 = (minN===null) ? (cur.min10||0) : Math.max(0, to10(minN));
+        cur.category = cat ? cat : null;
+        cur.note = note ? note : null;
+
+        normalizeMaster();
+        // IDは変わらないので start10/end10 はそのままOK
+        renderMaster();
+        renderProductsFull();
+        scheduleKpis();
+        markDraftDirty("master edit");
+
+        if(doSync){
+          await saveMaster();
+        }else{
+          alert("更新しました（まだ同期はしていません）");
+        }
+      };
+
+      const btnApply = el.querySelector('[data-act="apply"]');
+      const btnApplySync = el.querySelector('[data-act="applySync"]');
+      const btnCancel = el.querySelector('[data-act="cancel"]');
+
+      if(btnApply) btnApply.addEventListener("click", () => applyEdit(false));
+      if(btnApplySync) btnApplySync.addEventListener("click", () => applyEdit(true));
+      if(btnCancel) btnCancel.addEventListener("click", () => { editingMasterId = null; renderMaster(); });
+
       box.appendChild(el);
     }
   }
 
-  // ===== Events load/render/delete（Mと同等） =====
+  // ===== Events load/render/delete（省略：Sample N同等） =====
   async function loadEvents(){
     const { data, error } = await sb
       .from("docs")
@@ -1277,7 +1371,7 @@
     $("kpiAvgPerHead").textContent = (sumGuests>0) ? `平均（原価/人） ${yen(sumCost/sumGuests)}` : "—";
   }
 
-  // ===== Flow（Mと同等） =====
+  // ===== Flow（省略：Sample N同等） =====
   async function confirmStart(){
     if(mustReload) return alert("②再読み込みが完了するまで操作できません。");
     if(!master.items?.length) return alert("商品マスタが空です。先に登録してください。");
@@ -1375,7 +1469,7 @@
     alert("⑧宴会を保存しました。");
   }
 
-  // ===== ③宴会情報リセット（Mと同等） =====
+  // ===== ③宴会情報リセット =====
   let metaResetArmed = false;
   let metaResetTimer = null;
 
@@ -1452,7 +1546,7 @@
     updateDraftInfoUI("削除済み");
   }
 
-  // ===== Realtime（Mと同等） =====
+  // ===== Realtime（省略：Sample N同等） =====
   function stopRealtime(){
     if(rtChannel){
       sb.removeChannel(rtChannel);
@@ -1483,7 +1577,7 @@
     const u = await getUser();
     if(!u) return;
 
-    rtChannel = sb.channel("docs-rt-n");
+    rtChannel = sb.channel("docs-rt-o");
     rtChannel.on("postgres_changes", {
       event:"*",
       schema:"public",
@@ -1504,6 +1598,8 @@
         normalizeMaster();
         masterRowEnsured = true;
         initQtyMaps();
+        // 編集中は閉じる（他端末更新で齟齬を避ける）
+        editingMasterId = null;
         renderMaster();
         renderProductsFull();
         scheduleKpis();
@@ -1596,7 +1692,6 @@
   });
 
   $("btnFillStartMin").addEventListener("click", () => {
-    // 既に入力があるなら「上書き」か「0だけ」かを単一ボタンで選べるようにする
     const items = master.items || [];
     const hasNonZero = items.some(it => (it.min10||0)>0 && (start10[it.id]||0) > 0);
     if(hasNonZero){
@@ -1657,7 +1752,7 @@
     const name = ($("mName").value || "").trim();
     const unit = ($("mUnit").value || "本").trim() || "本";
     const cost = parseNumberSafe($("mCost").value);
-    const minN = parseNumberSafe($("mMin").value); // ★サンプルN：目安を保存
+    const minN = parseNumberSafe($("mMin").value);
     const min10 = (minN===null || minN<0) ? 0 : Math.max(0, to10(minN));
 
     if(!name) return alert("商品名を入れてください");
@@ -1668,7 +1763,7 @@
       name,
       unit,
       costYen: Math.round(cost),
-      min10, // ★保存される
+      min10,
       category: ($("mCat").value || "").trim() || null,
       note: ($("mNote").value || "").trim() || null
     };
@@ -1684,6 +1779,7 @@
 
     normalizeMaster();
     initQtyMaps();
+    editingMasterId = it.id; // 追加直後は編集開く
     renderMaster();
     renderProductsFull();
     scheduleKpis();
