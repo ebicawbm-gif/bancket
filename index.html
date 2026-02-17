@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="color-scheme" content="light dark" />
-  <title>宴会 見込み原価（開始/終了在庫） Sample T</title>
+  <title>宴会 見込み原価（開始/終了在庫） Sample S</title>
 
   <style>
     :root{
@@ -160,7 +160,7 @@
 <body>
 <header>
   <div class="top">
-    <h1>宴会 見込み原価（開始/終了在庫） - Sample T（下書き上部ボタン修繕）</h1>
+    <h1>宴会 見込み原価（開始/終了在庫） - Sample S（下書きボタン修正版）</h1>
     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
       <button id="btnTheme" class="themeBtn" type="button">☀️ <span class="mono" style="font-size:12px;">LIGHT</span></button>
       <button id="btnReloadNow" class="themeBtn" type="button">🔄 再読み込み</button>
@@ -505,6 +505,13 @@
 </main>
 
 <script>
+/**
+ * Sample S 修正点（この版）
+ * - 「新規下書き」が無反応 → btnNewDraft / btnDupDraft / btnDelDraft を実装
+ * - IDズレでも落ちない（null-safe on）
+ * - CSS.escape 非対応の古いSafari対策
+ * - ⑥取り消し（btnUnlockMeta）も有効化
+ */
 (() => {
   const SUPABASE_URL = "https://pftjjrluhdbovoaxnykn.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBmdGpqcmx1aGRib3ZvYXhueWtuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMzUzMTUsImV4cCI6MjA4NjcxMTMxNX0.qX-LpvYcbu589h96FdxJmUEqYto64wniBcuGXraJaoU";
@@ -515,8 +522,8 @@
 
   const THEME_KEY = "banquet_theme";
   const DID_KEY = "banquet_device_id";
-  const ACTIVE_DRAFT_KEY = "banquet_active_draft_key_t";
-  const LOCAL_DRAFT_PREFIX = "banquet_draft_t_"; // + draftKey
+  const ACTIVE_DRAFT_KEY = "banquet_active_draft_key_q";
+  const LOCAL_DRAFT_PREFIX = "banquet_draft_q_"; // + draftKey
 
   const AUTO_DRAFT_SYNC = true;
   const AUTO_SYNC_DEBOUNCE_MS = 1300;
@@ -524,6 +531,23 @@
   const REMOTE_APPLY_GUARD_MS = 1100;
 
   const $ = (id) => document.getElementById(id);
+
+  // null-safe event binder（要素が無くても落ちない）
+  function on(id, ev, fn){
+    const el = $(id);
+    if(!el){
+      console.warn("missing element:", id);
+      return;
+    }
+    el.addEventListener(ev, fn);
+  }
+
+  // CSS.escape が無い環境対策（古いiPad Safari向け）
+  function cssEscape(v){
+    const s = String(v ?? "");
+    if(window.CSS && typeof CSS.escape === "function") return CSS.escape(s);
+    return s.replace(/[^a-zA-Z0-9_-]/g, (m)=>"\\"+m);
+  }
 
   // ===== UI helpers =====
   function showLoginAlert(msg, err){
@@ -540,7 +564,7 @@
   }
   function setAppState(t){ $("appState").textContent = t; }
 
-  // ===== global error hook =====
+  // ===== global error hook（「無反応」を撲滅） =====
   window.addEventListener("error", (e) => {
     const msg = e?.message || "Unknown error";
     const src = e?.filename ? `${e.filename}:${e.lineno||0}` : "";
@@ -576,7 +600,7 @@
     return did;
   }
 
-  // ===== Supabase SDK loader =====
+  // ===== Supabase SDK loader（フォールバック） =====
   function loadScript(url){
     return new Promise((resolve, reject) => {
       const s = document.createElement("script");
@@ -700,19 +724,6 @@
   let armedDeleteEventKey = null;
   let armedDeleteEventTimer = null;
 
-  // ===== Sample T 追加：上部「下書き削除」2段階の状態 =====
-  let topDraftDeleteArmed = false;
-  let topDraftDeleteTimer = null;
-  function resetTopDraftDeleteBtn(){
-    topDraftDeleteArmed = false;
-    if(topDraftDeleteTimer){
-      clearTimeout(topDraftDeleteTimer);
-      topDraftDeleteTimer = null;
-    }
-    const b = $("btnDelDraft");
-    if(b) b.textContent = "下書き削除";
-  }
-
   let rtChannel = null;
   let editingMasterId = null;
 
@@ -748,7 +759,7 @@
     }, 350);
   }
 
-  // ===== Auth wrappers =====
+  // ===== Auth wrappers（sb未初期化でも無反応にしない） =====
   async function getUser(){
     if(!sb) return null;
     const { data } = await sb.auth.getUser();
@@ -860,9 +871,6 @@
     $("currentDraftKey").textContent = key || "—";
     updateCurrentDraftSummaryUI();
     renderDraftList();
-
-    // Sample T：上部削除の武装を解除
-    resetTopDraftDeleteBtn();
   }
   function getActiveDraftKeyFromStorage(){
     return localStorage.getItem(ACTIVE_DRAFT_KEY) || null;
@@ -926,73 +934,75 @@
     renderDraftList();
   }
 
-  async function createNewDraft(andSwitch=true){
-    const u = await getUser();
-    if(!u) return alert("先にログインして");
-    const key = crypto.randomUUID ? crypto.randomUUID() : String(Date.now());
-    const payload = buildBlankDraftPayload();
-    const { error } = await sb.from("docs").insert({ user_id:u.id, kind:DRAFT_KIND, doc_key:key, payload });
-    if(error){
-      log("createNewDraft error", error);
-      return alert("新規下書き作成に失敗: " + error.message);
+  function renderDraftList(){
+    const box = $("draftList");
+    box.innerHTML = "";
+    $("noDraftsHint").style.display = drafts.length ? "none" : "";
+
+    for(const d of drafts){
+      const isActive = (d.doc_key === currentDraftKey);
+      const armed = (armedDeleteDraftKey === d.doc_key);
+      const payload = d.payload || {};
+      const summary = briefDraftSummary(payload);
+      const upd = d.updated_at || "-";
+      const savedAt = payload.savedAt || "-";
+      const by = payload.savedBy || "-";
+
+      const el = document.createElement("div");
+      el.className = "draftItem" + (isActive ? " active" : "");
+      el.innerHTML = `
+        <div style="min-width:260px;">
+          <div style="font-weight:900; font-size:13px;">${isActive ? "✅ " : ""}下書き</div>
+          <div class="small">${escapeHtml(summary)}</div>
+          <div class="small mono">key=${escapeHtml(d.doc_key)}</div>
+          <div class="small mono">updated=${escapeHtml(upd)} / savedAt=${escapeHtml(savedAt)} / by=${escapeHtml(by)}</div>
+          ${armed ? `<div class="small" style="margin-top:6px;color:var(--warn);">⚠ 7秒以内にもう一度押すと削除</div>` : ``}
+        </div>
+
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+          <button class="primary" data-act="open" data-key="${escapeHtml(d.doc_key)}" type="button">${isActive ? "表示中" : "切替"}</button>
+          <button class="ghost" data-act="dup" data-key="${escapeHtml(d.doc_key)}" type="button">複製</button>
+          <button class="${armed ? "danger" : "ghost"}" data-act="del" data-key="${escapeHtml(d.doc_key)}" type="button">${armed ? "もう一度で削除" : "削除"}</button>
+        </div>
+      `;
+
+      el.querySelector('[data-act="open"]').addEventListener("click", async () => {
+        if(mustReload) return alert("②再読み込みが完了するまで操作できません。");
+        const key = d.doc_key;
+        if(key === currentDraftKey) return;
+
+        if(draftDirty && navigator.onLine){
+          await saveRemoteDraftNow(true, "switch-pre");
+        }else{
+          scheduleLocalDraftSave();
+        }
+
+        const ok = await switchToDraft(key);
+        if(ok) scrollToMetaCard();
+      });
+
+      el.querySelector('[data-act="dup"]').addEventListener("click", async () => {
+        if(mustReload) return alert("②再読み込みが完了するまで操作できません。");
+        await duplicateDraft(d.doc_key);
+      });
+
+      el.querySelector('[data-act="del"]').addEventListener("click", async () => {
+        if(mustReload) return alert("②再読み込みが完了するまで操作できません。");
+        const key = d.doc_key;
+        if(armedDeleteDraftKey !== key){
+          disarmDraftDelete();
+          armedDeleteDraftKey = key;
+          armedDeleteDraftTimer = setTimeout(disarmDraftDelete, 7000);
+          renderDraftList();
+          return;
+        }
+        disarmDraftDelete();
+        if(!confirm("この下書きをSupabaseから完全削除します。よろしいですか？")) return;
+        await deleteDraft(key);
+      });
+
+      box.appendChild(el);
     }
-    await loadDraftList();
-    if(andSwitch){
-      await switchToDraft(key);
-      scrollToMetaCard();
-    }
-  }
-
-  async function duplicateDraft(fromKey){
-    const u = await getUser();
-    if(!u) return alert("先にログインして");
-    const src = await fetchDraftByKey(fromKey);
-    if(!src?.payload) return alert("複製元の下書きが見つかりません");
-
-    const key = crypto.randomUUID ? crypto.randomUUID() : String(Date.now());
-    const copy = JSON.parse(JSON.stringify(src.payload));
-    copy.savedAt = new Date().toISOString();
-    copy.savedBy = getOrCreateDeviceId();
-
-    const { error } = await sb.from("docs").insert({ user_id:u.id, kind:DRAFT_KIND, doc_key:key, payload:copy });
-    if(error){
-      log("duplicateDraft error", error);
-      return alert("複製に失敗: " + error.message);
-    }
-    await loadDraftList();
-    await switchToDraft(key);
-    scrollToMetaCard();
-  }
-
-  async function deleteDraft(key){
-    const u = await getUser();
-    if(!u) return alert("先にログインして");
-
-    const { error } = await sb
-      .from("docs")
-      .delete()
-      .eq("kind", DRAFT_KIND)
-      .eq("doc_key", key)
-      .eq("user_id", u.id);
-
-    if(error){
-      log("deleteDraft error", error);
-      return alert("下書き削除に失敗: " + error.message);
-    }
-    clearLocalDraftForKey(key);
-
-    await loadDraftList();
-
-    if(key === currentDraftKey){
-      const next = drafts[0]?.doc_key || null;
-      if(next){
-        await switchToDraft(next);
-      }else{
-        setActiveDraftKey(null);
-        await createNewDraft(true);
-      }
-    }
-    alert("下書きを削除しました");
   }
 
   async function fetchDraftByKey(key){
@@ -1070,6 +1080,75 @@
       savedAt: now,
       savedBy: getOrCreateDeviceId()
     };
+  }
+
+  async function createNewDraft(andSwitch=true){
+    const u = await getUser();
+    if(!u) return alert("先にログインして");
+    const key = crypto.randomUUID ? crypto.randomUUID() : String(Date.now());
+    const payload = buildBlankDraftPayload();
+    const { error } = await sb.from("docs").insert({ user_id:u.id, kind:DRAFT_KIND, doc_key:key, payload });
+    if(error){
+      log("createNewDraft error", error);
+      return alert("新規下書き作成に失敗: " + error.message);
+    }
+    await loadDraftList();
+    if(andSwitch){
+      await switchToDraft(key);
+      scrollToMetaCard();
+    }
+  }
+
+  async function duplicateDraft(fromKey){
+    const u = await getUser();
+    if(!u) return alert("先にログインして");
+    const src = await fetchDraftByKey(fromKey);
+    if(!src?.payload) return alert("複製元の下書きが見つかりません");
+
+    const key = crypto.randomUUID ? crypto.randomUUID() : String(Date.now());
+    const copy = JSON.parse(JSON.stringify(src.payload));
+    copy.savedAt = new Date().toISOString();
+    copy.savedBy = getOrCreateDeviceId();
+
+    const { error } = await sb.from("docs").insert({ user_id:u.id, kind:DRAFT_KIND, doc_key:key, payload:copy });
+    if(error){
+      log("duplicateDraft error", error);
+      return alert("複製に失敗: " + error.message);
+    }
+    await loadDraftList();
+    await switchToDraft(key);
+    scrollToMetaCard();
+  }
+
+  async function deleteDraft(key){
+    const u = await getUser();
+    if(!u) return alert("先にログインして");
+
+    const { error } = await sb
+      .from("docs")
+      .delete()
+      .eq("kind", DRAFT_KIND)
+      .eq("doc_key", key)
+      .eq("user_id", u.id);
+
+    if(error){
+      log("deleteDraft error", error);
+      return alert("下書き削除に失敗: " + error.message);
+    }
+    clearLocalDraftForKey(key);
+
+    await loadDraftList();
+
+    if(key === currentDraftKey){
+      const next = drafts[0]?.doc_key || null;
+      if(next){
+        await switchToDraft(next);
+      }else{
+        setActiveDraftKey(null);
+        await createNewDraft(true);
+      }
+    }
+    alert("下書きを削除しました");
   }
 
   function buildDraftPayload(updateMetaSales=true){
@@ -1435,7 +1514,7 @@
   }
 
   function updateProductRow(itemId){
-    const ctrl = document.querySelector(\`.controls[data-itemid="\${CSS.escape(itemId)}"]\`);
+    const ctrl = document.querySelector(`.controls[data-itemid="${cssEscape(itemId)}"]`);
     if(!ctrl) return;
 
     const it = (master.items||[]).find(x => x.id === itemId);
@@ -1467,7 +1546,7 @@
       if(info.usedClass) usedVal.classList.add(info.usedClass);
     }
 
-    const row = document.querySelector(\`.prodRow[data-itemid="\${CSS.escape(itemId)}"]\`);
+    const row = document.querySelector(`.prodRow[data-itemid="${cssEscape(itemId)}"]`);
     if(row){
       const warnEl = row.querySelector('[data-role="minWarn"]');
       if(warnEl){
@@ -1561,10 +1640,10 @@
     }
     scheduleKpis();
     markDraftDirty("fill min");
-    alert(\`目安を開始に反映しました（変更: \${changed} 商品）\`);
+    alert(`目安を開始に反映しました（変更: ${changed} 商品）`);
   }
 
-  // ===== Master UI =====
+  // ===== Master UI（ここ以降は元のまま） =====
   function findMasterItem(id){
     return (master.items||[]).find(x => x.id === id) || null;
   }
@@ -1692,114 +1771,6 @@
     }
   }
 
-  // ===== Draft List UI =====
-  function renderDraftList(){
-    const box = $("draftList");
-    box.innerHTML = "";
-    $("noDraftsHint").style.display = drafts.length ? "none" : "";
-
-    for(const d of drafts){
-      const isActive = (d.doc_key === currentDraftKey);
-      const armed = (armedDeleteDraftKey === d.doc_key);
-      const payload = d.payload || {};
-      const summary = briefDraftSummary(payload);
-      const upd = d.updated_at || "-";
-      const savedAt = payload.savedAt || "-";
-      const by = payload.savedBy || "-";
-
-      const el = document.createElement("div");
-      el.className = "draftItem" + (isActive ? " active" : "");
-      el.innerHTML = `
-        <div style="min-width:260px;">
-          <div style="font-weight:900; font-size:13px;">${isActive ? "✅ " : ""}下書き</div>
-          <div class="small">${escapeHtml(summary)}</div>
-          <div class="small mono">key=${escapeHtml(d.doc_key)}</div>
-          <div class="small mono">updated=${escapeHtml(upd)} / savedAt=${escapeHtml(savedAt)} / by=${escapeHtml(by)}</div>
-          ${armed ? `<div class="small" style="margin-top:6px;color:var(--warn);">⚠ 7秒以内にもう一度押すと削除</div>` : ``}
-        </div>
-
-        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-          <button class="primary" data-act="open" data-key="${escapeHtml(d.doc_key)}" type="button">${isActive ? "表示中" : "切替"}</button>
-          <button class="ghost" data-act="dup" data-key="${escapeHtml(d.doc_key)}" type="button">複製</button>
-          <button class="${armed ? "danger" : "ghost"}" data-act="del" data-key="${escapeHtml(d.doc_key)}" type="button">${armed ? "もう一度で削除" : "削除"}</button>
-        </div>
-      `;
-
-      el.querySelector('[data-act="open"]').addEventListener("click", async () => {
-        if(mustReload) return alert("②再読み込みが完了するまで操作できません。");
-        const key = d.doc_key;
-        if(key === currentDraftKey) return;
-
-        // 上部削除の武装解除
-        resetTopDraftDeleteBtn();
-
-        if(draftDirty && navigator.onLine){
-          await saveRemoteDraftNow(true, "switch-pre");
-        }else{
-          scheduleLocalDraftSave();
-        }
-
-        const ok = await switchToDraft(key);
-        if(ok) scrollToMetaCard();
-      });
-
-      el.querySelector('[data-act="dup"]').addEventListener("click", async () => {
-        if(mustReload) return alert("②再読み込みが完了するまで操作できません。");
-        resetTopDraftDeleteBtn();
-        await duplicateDraft(d.doc_key);
-      });
-
-      el.querySelector('[data-act="del"]').addEventListener("click", async () => {
-        if(mustReload) return alert("②再読み込みが完了するまで操作できません。");
-        const key = d.doc_key;
-
-        // 上部削除の武装解除（誤操作防止）
-        resetTopDraftDeleteBtn();
-
-        if(armedDeleteDraftKey !== key){
-          disarmDraftDelete();
-          armedDeleteDraftKey = key;
-          armedDeleteDraftTimer = setTimeout(disarmDraftDelete, 7000);
-          renderDraftList();
-          return;
-        }
-        disarmDraftDelete();
-        if(!confirm("この下書きをSupabaseから完全削除します。よろしいですか？")) return;
-        await deleteDraft(key);
-      });
-
-      box.appendChild(el);
-    }
-  }
-
-  // ===== Draft actions =====
-  async function confirmStart(){
-    if(mustReload) return alert("②再読み込みが完了するまで操作できません。");
-    if(!master.items?.length) return alert("商品マスタが空です。先に登録してください。");
-    if(!$("evDate").value) $("evDate").value = todayISO();
-
-    stage = "end";
-    autoFillEndFromStart(false);
-    updateStageUI();
-    renderProductsFull();
-    scheduleKpis();
-    markDraftDirty("stage end");
-
-    alert("⑥開始を確定しました。⑦終了入力へ移動しました。\n※終了は開始で自動入力済みなので、実数に合わせて調整してください。");
-  }
-
-  async function backToStart(){
-    if(mustReload) return alert("②再読み込みが完了するまで操作できません。");
-    if(!confirm("終了入力を破棄して、開始入力へ戻りますか？")) return;
-    stage = "start";
-    for(const it of (master.items||[])) end10[it.id] = null;
-    updateStageUI();
-    renderProductsFull();
-    scheduleKpis();
-    markDraftDirty("stage start");
-  }
-
-  // ===== Events =====
   async function loadEvents(){
     const { data, error } = await sb
       .from("docs")
@@ -1934,6 +1905,32 @@
     $("kpiAvgPerHead").textContent = (sumGuests>0) ? `平均（原価/人） ${yen(sumCost/sumGuests)}` : "—";
   }
 
+  async function confirmStart(){
+    if(mustReload) return alert("②再読み込みが完了するまで操作できません。");
+    if(!master.items?.length) return alert("商品マスタが空です。先に登録してください。");
+    if(!$("evDate").value) $("evDate").value = todayISO();
+
+    stage = "end";
+    autoFillEndFromStart(false);
+    updateStageUI();
+    renderProductsFull();
+    scheduleKpis();
+    markDraftDirty("stage end");
+
+    alert("⑥開始を確定しました。⑦終了入力へ移動しました。\n※終了は開始で自動入力済みなので、実数に合わせて調整してください。");
+  }
+
+  async function backToStart(){
+    if(mustReload) return alert("②再読み込みが完了するまで操作できません。");
+    if(!confirm("終了入力を破棄して、開始入力へ戻りますか？")) return;
+    stage = "start";
+    for(const it of (master.items||[])) end10[it.id] = null;
+    updateStageUI();
+    renderProductsFull();
+    scheduleKpis();
+    markDraftDirty("stage start");
+  }
+
   function buildEventPayload(){
     const a = calcAgg();
     const guests = parseIntSafe($("evGuests").value);
@@ -2035,7 +2032,7 @@
     alert("③宴会情報をリセットしました。");
   }
 
-  // ===== Realtime =====
+  // ===== Realtime（元のまま） =====
   function stopRealtime(){
     if(rtChannel){
       sb.removeChannel(rtChannel);
@@ -2093,7 +2090,7 @@
     const u = await getUser();
     if(!u) return;
 
-    rtChannel = sb.channel("docs-rt-t");
+    rtChannel = sb.channel("docs-rt-s");
     rtChannel.on("postgres_changes", {
       event:"*",
       schema:"public",
@@ -2216,20 +2213,22 @@
     $("pw").disabled = on;
   }
 
-  // ===== bind =====
   function bindMainButtons(){
-    $("btnTheme").addEventListener("click", () => {
+    // theme
+    on("btnTheme", "click", () => {
       const now = document.documentElement.dataset.theme || "light";
       applyTheme(now === "dark" ? "light" : "dark");
     });
 
-    $("btnReloadRetry").addEventListener("click", () => {
+    // ② retry
+    on("btnReloadRetry", "click", () => {
       if(autoReloadInProgress) return;
       autoReloadInProgress = true;
       reloadAll();
     });
 
-    $("btnReloadNow").addEventListener("click", async () => {
+    // manual reload
+    on("btnReloadNow", "click", async () => {
       const u = await getUser();
       if(!u) return alert("先にログインしてください");
       if(autoReloadInProgress) return;
@@ -2240,47 +2239,8 @@
       setTimeout(reloadAll, 80);
     });
 
-    // ===== Sample T 追加：上部「新規下書き/複製/下書き削除」の無反応修繕 =====
-    $("btnNewDraft").addEventListener("click", async () => {
-      if(mustReload) return alert("②再読み込みが完了するまで操作できません。");
-      const u = await getUser();
-      if(!u) return alert("先にログインして");
-      resetTopDraftDeleteBtn();
-      disarmDraftDelete();
-      await createNewDraft(true);
-    });
-
-    $("btnDupDraft").addEventListener("click", async () => {
-      if(mustReload) return alert("②再読み込みが完了するまで操作できません。");
-      const u = await getUser();
-      if(!u) return alert("先にログインして");
-      if(!currentDraftKey) return alert("複製する下書きがありません。");
-      resetTopDraftDeleteBtn();
-      disarmDraftDelete();
-      await duplicateDraft(currentDraftKey);
-    });
-
-    $("btnDelDraft").addEventListener("click", async () => {
-      if(mustReload) return alert("②再読み込みが完了するまで操作できません。");
-      const u = await getUser();
-      if(!u) return alert("先にログインして");
-      if(!currentDraftKey) return alert("削除する下書きがありません。");
-
-      if(!topDraftDeleteArmed){
-        topDraftDeleteArmed = true;
-        $("btnDelDraft").textContent = "下書き削除（もう一度で完全削除）";
-        topDraftDeleteTimer = setTimeout(resetTopDraftDeleteBtn, 7000);
-        return;
-      }
-
-      resetTopDraftDeleteBtn();
-      disarmDraftDelete();
-
-      if(!confirm("現在の下書きをSupabaseから完全削除します。よろしいですか？")) return;
-      await deleteDraft(currentDraftKey);
-    });
-
-    $("btnLogin").addEventListener("click", async () => {
+    // login
+    on("btnLogin", "click", async () => {
       showLoginAlert("ログイン処理を開始します…", null);
 
       if(!sb){
@@ -2324,7 +2284,8 @@
       }
     });
 
-    $("btnLogout").addEventListener("click", async () => {
+    // logout
+    on("btnLogout", "click", async () => {
       if(!sb) return;
       stopRealtime();
       await sb.auth.signOut();
@@ -2336,7 +2297,74 @@
       alert("ログアウトしました");
     });
 
-    $("btnFillStartMin").addEventListener("click", () => {
+    // ===== ★ここが今回の修正：下書きボタン（上の3つ） =====
+    let topDeleteArmed = false;
+    let topDeleteTimer = null;
+
+    const disarmTopDelete = () => {
+      topDeleteArmed = false;
+      if(topDeleteTimer) clearTimeout(topDeleteTimer);
+      topDeleteTimer = null;
+      const b = $("btnDelDraft");
+      if(b) b.textContent = "下書き削除";
+    };
+
+    on("btnNewDraft", "click", async () => {
+      if(mustReload) return alert("②再読み込みが完了するまで操作できません。");
+      const u = await getUser();
+      if(!u) return alert("先にログインして");
+      disarmTopDelete();
+      await createNewDraft(true);
+    });
+
+    on("btnDupDraft", "click", async () => {
+      if(mustReload) return alert("②再読み込みが完了するまで操作できません。");
+      const u = await getUser();
+      if(!u) return alert("先にログインして");
+      if(!currentDraftKey) return alert("複製する下書きがありません。先に下書きを作ってください。");
+      disarmTopDelete();
+      await duplicateDraft(currentDraftKey);
+    });
+
+    on("btnDelDraft", "click", async () => {
+      if(mustReload) return alert("②再読み込みが完了するまで操作できません。");
+      const u = await getUser();
+      if(!u) return alert("先にログインして");
+      if(!currentDraftKey) return alert("削除する下書きがありません。");
+
+      if(!topDeleteArmed){
+        topDeleteArmed = true;
+        const b = $("btnDelDraft");
+        if(b) b.textContent = "もう一度で削除";
+        topDeleteTimer = setTimeout(disarmTopDelete, 7000);
+        return;
+      }
+
+      disarmTopDelete();
+      if(!confirm("現在の下書きをSupabaseから完全削除します。よろしいですか？")) return;
+      await deleteDraft(currentDraftKey);
+    });
+
+    // local cache clear
+    on("btnDraftClearLocal", "click", () => {
+      if(!currentDraftKey) return alert("対象の下書きがありません。");
+      if(!confirm("この端末のローカル退避（復元用）を削除します。\nSupabase側の下書きは削除されません。よろしいですか？")) return;
+      clearLocalDraftForKey(currentDraftKey);
+      alert("ローカル退避を削除しました。");
+    });
+
+    // stage seg（自然な挙動）
+    on("btnStageStart", "click", () => {
+      if(stage === "end") backToStart();
+      else $("products")?.scrollIntoView({ behavior:"smooth", block:"start" });
+    });
+    on("btnStageEnd", "click", () => {
+      if(stage === "start") confirmStart();
+      else $("products")?.scrollIntoView({ behavior:"smooth", block:"start" });
+    });
+
+    // bulk fill
+    on("btnFillStartMin", "click", () => {
       const items = master.items || [];
       const hasNonZero = items.some(it => (it.min10||0)>0 && (start10[it.id]||0) > 0);
       if(hasNonZero){
@@ -2347,51 +2375,54 @@
       }
     });
 
-    $("btnDraftSave").addEventListener("click", async () => { if(sb) await saveRemoteDraftNow(false, "manual"); });
+    // flow
+    on("btnDraftSave", "click", async () => { if(sb) await saveRemoteDraftNow(false, "manual"); });
+    on("btnConfirmStart", "click", confirmStart);
+    on("btnBackToStart", "click", backToStart);
+    on("btnFinishEvent", "click", finishEvent);
 
-    $("btnDraftClearLocal").addEventListener("click", () => {
-      if(!currentDraftKey) return alert("下書きがありません");
-      if(!confirm("現在の下書きのローカル退避（iPad内）を削除します。\nSupabase側は消えません。OK？")) return;
-      clearLocalDraftForKey(currentDraftKey);
-      alert("ローカル退避を削除しました。");
-    });
+    // ⑥取り消し（③を編集に戻す）
+    on("btnUnlockMeta", "click", backToStart);
 
-    $("btnConfirmStart").addEventListener("click", confirmStart);
-    $("btnBackToStart").addEventListener("click", backToStart);
-    $("btnFinishEvent").addEventListener("click", finishEvent);
-    $("btnMetaReset").addEventListener("click", onMetaResetClick);
+    // meta reset
+    on("btnMetaReset", "click", onMetaResetClick);
 
-    $("btnApplyRemote").addEventListener("click", () => {
+    // remote banner
+    on("btnApplyRemote", "click", () => {
       if(!pendingRemoteDraft) return hideRemoteBanner();
       applyDraftPayload(pendingRemoteDraft, "バナーから反映");
       setSyncState("下書き同期：他端末更新を反映", "ok");
     });
-    $("btnIgnoreRemote").addEventListener("click", () => {
+    on("btnIgnoreRemote", "click", () => {
       hideRemoteBanner();
       setSyncState("下書き同期：ローカル優先（上書き注意）", "run");
     });
 
-    $("btnClearFilter").addEventListener("click", () => {
+    // filter
+    on("btnClearFilter", "click", () => {
       $("fFrom").value = "";
       $("fTo").value = "";
       scheduleEventsRender();
     });
-    $("fFrom").addEventListener("change", scheduleEventsRender);
-    $("fTo").addEventListener("change", scheduleEventsRender);
+    on("fFrom", "change", scheduleEventsRender);
+    on("fTo", "change", scheduleEventsRender);
 
-    $("btnDump").addEventListener("click", () => {
+    // dump
+    on("btnDump", "click", () => {
       log("DUMP", { master, currentDraftKey, stage, start10, end10, draftsCount:drafts.length, eventsCount: events.length, draftDirty, lastSyncError });
     });
 
+    // meta changes
     ["evDate","evGuests","evDrinkPrice","evExt","evStyle","evStaff"].forEach(id => {
-      $(id).addEventListener("change", () => {
+      on(id, "change", () => {
         updateDurationUI();
         scheduleKpis();
         markDraftDirty("meta");
       });
     });
 
-    $("btnAddMaster").addEventListener("click", () => {
+    // master add/save
+    on("btnAddMaster", "click", () => {
       if(mustReload) return alert("②再読み込みが完了するまで操作できません。");
 
       const name = ($("mName").value || "").trim();
@@ -2432,7 +2463,7 @@
       markDraftDirty("master add");
     });
 
-    $("btnSaveMaster").addEventListener("click", saveMaster);
+    on("btnSaveMaster", "click", saveMaster);
   }
 
   // ===== Boot =====
@@ -2460,6 +2491,7 @@
     showLoginAlert("起動完了。ログインしてください。", null);
     setAppState("app: ui ready");
 
+    // Supabase init
     try{
       const loadedFrom = await ensureSupabaseSdk();
       log("supabase sdk loaded", loadedFrom);
@@ -2481,8 +2513,9 @@
     }
   }
 
-  try{ boot(); }
-  catch(e){
+  try{
+    boot();
+  }catch(e){
     log("boot crash", e);
     showLoginAlert("起動中に致命的エラー", e?.message || String(e));
     setAppState("app: boot failed");
