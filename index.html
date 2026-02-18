@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="color-scheme" content="light dark" />
-  <title>宴会 見込み原価（開始/終了在庫） Sample S</title>
+  <title>宴会 見込み原価（開始/終了在庫） Sample U</title>
 
   <style>
     :root{
@@ -160,7 +160,7 @@
 <body>
 <header>
   <div class="top">
-    <h1>宴会 見込み原価（開始/終了在庫） - Sample S（下書きボタン修正版）</h1>
+    <h1>宴会 見込み原価（開始/終了在庫） - Sample U（下書きボタン修正版 / 売上は税抜計算）</h1>
     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
       <button id="btnTheme" class="themeBtn" type="button">☀️ <span class="mono" style="font-size:12px;">LIGHT</span></button>
       <button id="btnReloadNow" class="themeBtn" type="button">🔄 再読み込み</button>
@@ -309,9 +309,9 @@
             <input id="evGuests" inputmode="numeric" placeholder="例：30" />
           </div>
           <div>
-            <label>飲み放題単価（円/人）</label>
-            <input id="evDrinkPrice" inputmode="numeric" placeholder="例：3000" />
-            <div class="small">見込み売上＝人数×単価</div>
+            <label>飲み放題単価（円/人）※税込入力</label>
+            <input id="evDrinkPrice" inputmode="numeric" placeholder="例：2500" />
+            <div class="small">見込み売上（税抜）＝人数×(単価÷1.1)</div>
           </div>
         </div>
 
@@ -353,9 +353,9 @@
             <div class="small" id="kpiMissingEnds">未入力 0</div>
           </div>
           <div class="kpi">
-            <div class="t">見込み売上（人数×単価）</div>
+            <div class="t">見込み売上（税抜：人数×(単価÷1.1)）</div>
             <div class="v mono" id="kpiThisSales">—</div>
-            <div class="small" id="kpiSalesHint">人数と単価を入れると計算</div>
+            <div class="small" id="kpiSalesHint">人数と単価を入れると計算（税抜）</div>
           </div>
           <div class="kpi">
             <div class="t">見込み原価率（原価÷売上）</div>
@@ -406,7 +406,8 @@
 
         <div class="small" style="margin-top:8px;">
           ✅ ⑤は「復元」用（ミスタップ/再読み込みでも消えない）<br>
-          ✅ ⑥開始確定で <b>終了が開始で自動入力</b>（ここから実数調整）
+          ✅ ⑥開始確定で <b>終了が開始で自動入力</b>（ここから実数調整）<br>
+          ✅ 見込み売上は <b>税抜（単価÷1.1）</b> で計算
         </div>
       </div>
 
@@ -438,7 +439,7 @@
 
         <div class="kpiGrid" style="margin-top:10px;">
           <div class="kpi"><div class="t">累計 見込み原価（確定のみ）</div><div class="v mono" id="kpiSumCostComplete">¥0</div><div class="small">未入力が無い宴会のみ</div></div>
-          <div class="kpi"><div class="t">累計 見込み売上（確定のみ）</div><div class="v mono" id="kpiSumSalesComplete">¥0</div><div class="small">人数×単価（未入力は除外）</div></div>
+          <div class="kpi"><div class="t">累計 見込み売上（確定のみ / 税抜）</div><div class="v mono" id="kpiSumSalesComplete">¥0</div><div class="small">人数×(単価÷1.1)（未入力は除外）</div></div>
           <div class="kpi"><div class="t">累計 原価率（確定のみ）</div><div class="v mono" id="kpiSumCostRateComplete">—</div><div class="small">原価÷売上</div></div>
           <div class="kpi"><div class="t">累計 人数 / 平均（原価/人）</div><div class="v mono" id="kpiSumGuests">0</div><div class="small mono" id="kpiAvgPerHead">—</div></div>
         </div>
@@ -506,11 +507,12 @@
 
 <script>
 /**
- * Sample S 修正点（この版）
+ * Sample U 修正点（この版）
  * - 「新規下書き」が無反応 → btnNewDraft / btnDupDraft / btnDelDraft を実装
  * - IDズレでも落ちない（null-safe on）
  * - CSS.escape 非対応の古いSafari対策
  * - ⑥取り消し（btnUnlockMeta）も有効化
+ * - ★計算変更：飲み放題単価は税込入力のまま／見込み売上は税抜（単価÷1.1）で計算
  */
 (() => {
   const SUPABASE_URL = "https://pftjjrluhdbovoaxnykn.supabase.co";
@@ -529,6 +531,16 @@
   const AUTO_SYNC_DEBOUNCE_MS = 1300;
   const AUTO_SYNC_FORCE_MS = 12000;
   const REMOTE_APPLY_GUARD_MS = 1100;
+
+  // ★消費税（10%）固定：税込入力→税抜売上（÷1.1）
+  const TAX_RATE = 0.10;
+  const TAX_DIV = 1 + TAX_RATE;
+  function calcNetSalesYen(guests, grossPerHeadYen){
+    if(!guests || guests <= 0) return null;
+    if(!grossPerHeadYen || grossPerHeadYen <= 0) return null;
+    // 人数×(税込単価÷1.1) を円単位で四捨五入
+    return Math.round(guests * (grossPerHeadYen / TAX_DIV));
+  }
 
   const $ = (id) => document.getElementById(id);
 
@@ -913,7 +925,7 @@
     const m = payload.meta || {};
     const date = m.date || "-";
     const guests = (m.guests ?? null) ? `${m.guests}名` : "人数—";
-    const per = (m.drinkPricePerHeadYen ?? null) ? `単価¥${Number(m.drinkPricePerHeadYen).toLocaleString("ja-JP")}` : "単価—";
+    const per = (m.drinkPricePerHeadYen ?? null) ? `単価¥${Number(m.drinkPricePerHeadYen).toLocaleString("ja-JP")}税込` : "単価—";
     const staff = (m.staff || []).join("/") || "担当—";
     const st = payload.stage === "end" ? "終了入力" : "開始入力";
     return `${date} / ${guests} / ${per} / ${staff} / ${st}`;
@@ -1154,7 +1166,9 @@
   function buildDraftPayload(updateMetaSales=true){
     const guests = parseIntSafe($("evGuests").value);
     const per = parseIntSafe($("evDrinkPrice").value);
-    const salesYen = (guests && per) ? guests*per : null;
+
+    // ★税抜売上
+    const salesYen = calcNetSalesYen(guests, per);
 
     const ext = Math.max(0, parseIntSafe($("evExt").value) || 0);
     const durationMin = 90 + 30*ext;
@@ -1169,8 +1183,8 @@
       meta:{
         date: $("evDate").value || todayISO(),
         guests: guests ?? null,
-        drinkPricePerHeadYen: per ?? null,
-        salesYen: updateMetaSales ? salesYen : null,
+        drinkPricePerHeadYen: per ?? null, // 入力は税込のまま保持
+        salesYen: updateMetaSales ? salesYen : null, // 保存される売上は税抜
         extensionCount: ext,
         durationMin,
         style,
@@ -1327,12 +1341,11 @@
     const ext = Math.max(0, parseIntSafe($("evExt").value) || 0);
     $("evDuration").textContent = `${90 + 30*ext}分`;
   }
+
   function getDraftSalesYen(){
     const guests = parseIntSafe($("evGuests").value);
     const per = parseIntSafe($("evDrinkPrice").value);
-    if(!guests || guests<=0) return null;
-    if(!per || per<=0) return null;
-    return guests*per;
+    return calcNetSalesYen(guests, per); // ★税抜
   }
 
   function updateBulkBarUI(){
@@ -1404,7 +1417,7 @@
     }else{
       $("kpiThisSales").textContent = "—";
       $("kpiThisCostRate").textContent = "—";
-      $("kpiSalesHint").textContent = "人数と単価を入れると計算";
+      $("kpiSalesHint").textContent = "人数と単価を入れると計算（税抜）";
     }
 
     $("kpiThisStatus").textContent =
@@ -1834,7 +1847,7 @@
       const date = p.date || "-";
       const guests = p.guests ?? null;
       const cost = Number(p.totalCostYen ?? 0);
-      const sales = (p.salesYen===null || p.salesYen===undefined) ? null : Number(p.salesYen);
+      const sales = (p.salesYen===null || p.salesYen===undefined) ? null : Number(p.salesYen); // ★税抜売上
       const missingEnds = Number(p.missingEnds ?? 0);
       const isComplete = !!p.isComplete;
 
@@ -1861,9 +1874,9 @@
         <div class="itemHeader">
           <div>
             <h3>${escapeHtml(date)}　${guests ? guests+"名" : "人数—"}　${badge}</h3>
-            <div class="small">単価：<span class="mono">${escapeHtml(perHead)}</span> / 時間：${escapeHtml(duration)} / 形態：${escapeHtml(style)} / 担当：${escapeHtml(staff)}</div>
+            <div class="small">単価：<span class="mono">${escapeHtml(perHead)}</span>（税込） / 時間：${escapeHtml(duration)} / 形態：${escapeHtml(style)} / 担当：${escapeHtml(staff)}</div>
             <div class="small">
-              売上：<span class="mono">${sales===null ? "—" : yen(sales)}</span>
+              売上（税抜）：<span class="mono">${sales===null ? "—" : yen(sales)}</span>
               / 原価：<span class="mono">${yen(cost)}</span>
               / 原価率：<span class="mono">${rate===null ? "—" : pct(rate)}</span>
             </div>
@@ -1935,7 +1948,9 @@
     const a = calcAgg();
     const guests = parseIntSafe($("evGuests").value);
     const per = parseIntSafe($("evDrinkPrice").value);
-    const salesYen = (guests && per) ? guests*per : null;
+
+    // ★税抜売上
+    const salesYen = calcNetSalesYen(guests, per);
 
     const ext = Math.max(0, parseIntSafe($("evExt").value) || 0);
     const durationMin = 90 + 30*ext;
@@ -1944,8 +1959,8 @@
       version:1,
       date: $("evDate").value || todayISO(),
       guests: guests ?? null,
-      drinkPricePerHeadYen: per ?? null,
-      salesYen,
+      drinkPricePerHeadYen: per ?? null, // 入力は税込のまま保持
+      salesYen, // 税抜で保存
       extensionCount: ext,
       durationMin,
       style: $("evStyle").value || "seated",
@@ -2297,7 +2312,7 @@
       alert("ログアウトしました");
     });
 
-    // ===== ★ここが今回の修正：下書きボタン（上の3つ） =====
+    // ===== 下書きボタン =====
     let topDeleteArmed = false;
     let topDeleteTimer = null;
 
