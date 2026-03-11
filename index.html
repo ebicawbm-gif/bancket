@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="color-scheme" content="light dark" />
-  <title>宴会 見込み原価（開始/終了在庫） Sample U</title>
+  <title>宴会 見込み原価（開始/終了在庫） Sample V</title>
 
   <style>
     :root{
@@ -149,6 +149,13 @@
       background: color-mix(in oklab, var(--accent) 5%, var(--card));
     }
 
+    details summary{
+      list-style:none;
+    }
+    details summary::-webkit-details-marker{
+      display:none;
+    }
+
     @media (max-width: 980px){
       .prodRow{ grid-template-columns: 1fr; }
       .controls{ grid-template-columns: 1fr; }
@@ -160,7 +167,7 @@
 <body>
 <header>
   <div class="top">
-    <h1>宴会 見込み原価（開始/終了在庫） - Sample U（下書きボタン修正版 / 売上は税抜計算）</h1>
+    <h1>宴会 見込み原価（開始/終了在庫） - Sample V（保存済み詳細確認 / 下書き復元編集対応）</h1>
     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
       <button id="btnTheme" class="themeBtn" type="button">☀️ <span class="mono" style="font-size:12px;">LIGHT</span></button>
       <button id="btnReloadNow" class="themeBtn" type="button">🔄 再読み込み</button>
@@ -190,6 +197,7 @@
       <span class="manualChip"><span class="stepNo">6</span>開始確定</span>
       <span class="manualChip"><span class="stepNo">7</span>終了入力</span>
       <span class="manualChip"><span class="stepNo">8</span>宴会保存</span>
+      <span class="manualChip">保存済み → 下書きへ復元 → 再編集可</span>
     </div>
   </div>
 </header>
@@ -248,7 +256,7 @@
         <div class="draftRow">
           <div>
             <h2 style="margin:0 0 6px; font-size:15px;">下書き（宴会）を切り替え</h2>
-            <div class="small">同時に2宴会が走る時は「新規下書き」を2つ作って切り替え。</div>
+            <div class="small">同時に2宴会が走る時は「新規下書き」を2つ作って切り替え。保存済み宴会の復元編集もここへ入ります。</div>
           </div>
           <div class="btnbar" style="margin-top:0;">
             <button class="primary" id="btnNewDraft" type="button">＋ 新規下書き</button>
@@ -273,7 +281,8 @@
 
         <div class="small" style="margin-top:10px;">
           ※「下書き削除」は <b>2段階</b><br>
-          ※基本は <b>自動同期</b>（オフライン時はローカル保存）
+          ※基本は <b>自動同期</b>（オフライン時はローカル保存）<br>
+          ※保存済み宴会から復元した下書きは、⑧で <b>上書き</b> または <b>別保存</b> を選べます
         </div>
       </div>
 
@@ -407,7 +416,8 @@
         <div class="small" style="margin-top:8px;">
           ✅ ⑤は「復元」用（ミスタップ/再読み込みでも消えない）<br>
           ✅ ⑥開始確定で <b>終了が開始で自動入力</b>（ここから実数調整）<br>
-          ✅ 見込み売上は <b>税抜（単価÷1.1）</b> で計算
+          ✅ 見込み売上は <b>税抜（単価÷1.1）</b> で計算<br>
+          ✅ ⑧保存時、今後は <b>商品ごとの開始/終了/使用数スナップショット</b> も保存
         </div>
       </div>
 
@@ -431,7 +441,8 @@
 
       <div class="card">
         <h2 style="margin:0 0 10px; font-size:15px;">宴会一覧（保存済み）＋累計</h2>
-        <div class="row">
+        <div class="small">※新形式で保存された宴会は「内容詳細」「下書きへ復元」が使えます。旧形式は概要のみ確認可能です。</div>
+        <div class="row" style="margin-top:10px;">
           <div><label>フィルタ（開始日）</label><input id="fFrom" type="date" /></div>
           <div><label>フィルタ（終了日）</label><input id="fTo" type="date" /></div>
           <div><label>操作</label><div class="btnbar" style="margin-top:0;"><button class="ghost" id="btnClearFilter" type="button">フィルタ解除</button></div></div>
@@ -507,12 +518,13 @@
 
 <script>
 /**
- * Sample U 修正点（この版）
- * - 「新規下書き」が無反応 → btnNewDraft / btnDupDraft / btnDelDraft を実装
- * - IDズレでも落ちない（null-safe on）
- * - CSS.escape 非対応の古いSafari対策
- * - ⑥取り消し（btnUnlockMeta）も有効化
- * - ★計算変更：飲み放題単価は税込入力のまま／見込み売上は税抜（単価÷1.1）で計算
+ * Sample V 修正点
+ * - 保存済み宴会に itemsSnapshot / start10 / end10 を保存
+ * - 保存済み宴会一覧で「内容詳細」を表示可能
+ * - 保存済み宴会を「下書きへ復元」して再編集可能
+ * - 復元下書きは ⑧保存時に「上書き更新 / 別保存」を選択可能
+ * - 旧形式データ（明細無し）は概要確認のみ
+ * - 下書きボタン修正版 / 売上は税抜計算
  */
 (() => {
   const SUPABASE_URL = "https://pftjjrluhdbovoaxnykn.supabase.co";
@@ -532,19 +544,16 @@
   const AUTO_SYNC_FORCE_MS = 12000;
   const REMOTE_APPLY_GUARD_MS = 1100;
 
-  // ★消費税（10%）固定：税込入力→税抜売上（÷1.1）
   const TAX_RATE = 0.10;
   const TAX_DIV = 1 + TAX_RATE;
   function calcNetSalesYen(guests, grossPerHeadYen){
     if(!guests || guests <= 0) return null;
     if(!grossPerHeadYen || grossPerHeadYen <= 0) return null;
-    // 人数×(税込単価÷1.1) を円単位で四捨五入
     return Math.round(guests * (grossPerHeadYen / TAX_DIV));
   }
 
   const $ = (id) => document.getElementById(id);
 
-  // null-safe event binder（要素が無くても落ちない）
   function on(id, ev, fn){
     const el = $(id);
     if(!el){
@@ -554,14 +563,12 @@
     el.addEventListener(ev, fn);
   }
 
-  // CSS.escape が無い環境対策（古いiPad Safari向け）
   function cssEscape(v){
     const s = String(v ?? "");
     if(window.CSS && typeof CSS.escape === "function") return CSS.escape(s);
     return s.replace(/[^a-zA-Z0-9_-]/g, (m)=>"\\"+m);
   }
 
-  // ===== UI helpers =====
   function showLoginAlert(msg, err){
     const box = $("loginAlert");
     box.classList.add("show");
@@ -576,7 +583,6 @@
   }
   function setAppState(t){ $("appState").textContent = t; }
 
-  // ===== global error hook（「無反応」を撲滅） =====
   window.addEventListener("error", (e) => {
     const msg = e?.message || "Unknown error";
     const src = e?.filename ? `${e.filename}:${e.lineno||0}` : "";
@@ -589,7 +595,6 @@
     setAppState("app: promise error");
   });
 
-  // ===== Theme =====
   function applyTheme(theme){
     document.documentElement.dataset.theme = theme;
     document.documentElement.style.colorScheme = theme;
@@ -612,7 +617,6 @@
     return did;
   }
 
-  // ===== Supabase SDK loader（フォールバック） =====
   function loadScript(url){
     return new Promise((resolve, reject) => {
       const s = document.createElement("script");
@@ -648,7 +652,6 @@
     throw lastErr || new Error("Supabase SDK load failed");
   }
 
-  // ===== App main =====
   let sb = null;
 
   function log(msg, obj){
@@ -686,7 +689,6 @@
     $("syncState").textContent = state;
   }
 
-  // ===== Tabs =====
   function showTab(tab){
     document.querySelectorAll(".tab").forEach(x => x.classList.remove("active"));
     document.querySelectorAll(".tab").forEach(x => { if(x.dataset.tab === tab) x.classList.add("active"); });
@@ -699,7 +701,6 @@
     });
   }
 
-  // ===== ②再読み込みロック =====
   let mustReload = true;
   let autoReloadInProgress = false;
 
@@ -716,7 +717,6 @@
     setReloadMsg(t || (b ? "再読み込み中…" : "—"));
   }
 
-  // ===== State =====
   let master = { version:1, items:[] };
   let events = [];
   let drafts = [];
@@ -730,6 +730,9 @@
   let draftSavedBy = null;
   let draftServerUpdatedAt = null;
   let draftDirty = false;
+
+  let sourceEventKey = null;
+  let sourceEventUpdatedAt = null;
 
   let armedDeleteDraftKey = null;
   let armedDeleteDraftTimer = null;
@@ -771,7 +774,6 @@
     }, 350);
   }
 
-  // ===== Auth wrappers（sb未初期化でも無反応にしない） =====
   async function getUser(){
     if(!sb) return null;
     const { data } = await sb.auth.getUser();
@@ -783,7 +785,6 @@
     return u;
   }
 
-  // ===== Master / Draft / Events =====
   let masterRowEnsured = false;
 
   async function ensureMasterRow(){
@@ -859,7 +860,7 @@
     scheduleKpis();
   }
 
-  async function saveMaster(){
+  async function saveMaster(showDone=true){
     if(mustReload) return alert("②再読み込みが完了するまで操作できません。");
     const u = await getUser();
     if(!u) return alert("先にログインして");
@@ -874,7 +875,7 @@
       log("saveMaster error", error);
       return alert("マスタ保存エラー: " + error.message);
     }
-    alert("マスタを保存して同期しました");
+    if(showDone) alert("マスタを保存して同期しました");
   }
 
   function setActiveDraftKey(key){
@@ -928,7 +929,8 @@
     const per = (m.drinkPricePerHeadYen ?? null) ? `単価¥${Number(m.drinkPricePerHeadYen).toLocaleString("ja-JP")}税込` : "単価—";
     const staff = (m.staff || []).join("/") || "担当—";
     const st = payload.stage === "end" ? "終了入力" : "開始入力";
-    return `${date} / ${guests} / ${per} / ${staff} / ${st}`;
+    const mode = payload.sourceEventKey ? "復元編集" : "通常";
+    return `${date} / ${guests} / ${per} / ${staff} / ${st} / ${mode}`;
   }
 
   function updateCurrentDraftSummaryUI(){
@@ -968,6 +970,7 @@
           <div class="small">${escapeHtml(summary)}</div>
           <div class="small mono">key=${escapeHtml(d.doc_key)}</div>
           <div class="small mono">updated=${escapeHtml(upd)} / savedAt=${escapeHtml(savedAt)} / by=${escapeHtml(by)}</div>
+          ${payload.sourceEventKey ? `<div class="small mono">edited from event=${escapeHtml(payload.sourceEventKey)}</div>` : ``}
           ${armed ? `<div class="small" style="margin-top:6px;color:var(--warn);">⚠ 7秒以内にもう一度押すと削除</div>` : ``}
         </div>
 
@@ -1089,6 +1092,8 @@
       },
       start10:{},
       end10:{},
+      sourceEventKey: null,
+      sourceEventUpdatedAt: null,
       savedAt: now,
       savedBy: getOrCreateDeviceId()
     };
@@ -1121,6 +1126,8 @@
     const copy = JSON.parse(JSON.stringify(src.payload));
     copy.savedAt = new Date().toISOString();
     copy.savedBy = getOrCreateDeviceId();
+    copy.sourceEventKey = null;
+    copy.sourceEventUpdatedAt = null;
 
     const { error } = await sb.from("docs").insert({ user_id:u.id, kind:DRAFT_KIND, doc_key:key, payload:copy });
     if(error){
@@ -1166,25 +1173,21 @@
   function buildDraftPayload(updateMetaSales=true){
     const guests = parseIntSafe($("evGuests").value);
     const per = parseIntSafe($("evDrinkPrice").value);
-
-    // ★税抜売上
     const salesYen = calcNetSalesYen(guests, per);
-
     const ext = Math.max(0, parseIntSafe($("evExt").value) || 0);
     const durationMin = 90 + 30*ext;
-
     const style = $("evStyle").value;
     const staff = ($("evStaff").value || "").split(",").map(s=>s.trim()).filter(Boolean).slice(0,2);
-
     const now = new Date().toISOString();
+
     return {
       version:1,
       stage,
       meta:{
         date: $("evDate").value || todayISO(),
         guests: guests ?? null,
-        drinkPricePerHeadYen: per ?? null, // 入力は税込のまま保持
-        salesYen: updateMetaSales ? salesYen : null, // 保存される売上は税抜
+        drinkPricePerHeadYen: per ?? null,
+        salesYen: updateMetaSales ? salesYen : null,
         extensionCount: ext,
         durationMin,
         style,
@@ -1192,6 +1195,8 @@
       },
       start10,
       end10,
+      sourceEventKey,
+      sourceEventUpdatedAt,
       savedAt: now,
       savedBy: getOrCreateDeviceId()
     };
@@ -1217,6 +1222,9 @@
     draftSavedBy = p.savedBy || null;
     draftDirty = false;
 
+    sourceEventKey = p.sourceEventKey || null;
+    sourceEventUpdatedAt = p.sourceEventUpdatedAt || null;
+
     initQtyMaps();
     autoFillEndFromStart(false);
 
@@ -1237,7 +1245,8 @@
     const by = draftSavedBy ? ` / by ${draftSavedBy}` : "";
     const server = draftServerUpdatedAt ? ` / server ${draftServerUpdatedAt}` : "";
     const dirty = draftDirty ? " / *dirty" : "";
-    label.textContent = `下書き(${currentDraftKey||"—"}): ${saved}${by}${server}${dirty}` + (extra ? ` / ${extra}` : "");
+    const source = sourceEventKey ? ` / sourceEvent ${sourceEventKey}` : "";
+    label.textContent = `下書き(${currentDraftKey||"—"}): ${saved}${by}${server}${dirty}${source}` + (extra ? ` / ${extra}` : "");
 
     dot.classList.remove("ok","run","bad");
     if(stage === "end") dot.classList.add("run");
@@ -1345,7 +1354,7 @@
   function getDraftSalesYen(){
     const guests = parseIntSafe($("evGuests").value);
     const per = parseIntSafe($("evDrinkPrice").value);
-    return calcNetSalesYen(guests, per); // ★税抜
+    return calcNetSalesYen(guests, per);
   }
 
   function updateBulkBarUI(){
@@ -1656,7 +1665,6 @@
     alert(`目安を開始に反映しました（変更: ${changed} 商品）`);
   }
 
-  // ===== Master UI（ここ以降は元のまま） =====
   function findMasterItem(id){
     return (master.items||[]).find(x => x.id === id) || null;
   }
@@ -1823,6 +1831,161 @@
     scheduleEventsRender();
   }
 
+  function hasEventSnapshot(p){
+    return Array.isArray(p?.itemsSnapshot) && p.itemsSnapshot.length > 0;
+  }
+
+  function buildItemsSnapshot(){
+    return (master.items || [])
+      .map(it => {
+        const s10 = start10[it.id] || 0;
+        const rawEnd = end10[it.id];
+        const e10 = (rawEnd === undefined) ? null : rawEnd;
+        const used10 = (e10 === null) ? null : (s10 - e10);
+        const used = (used10 === null) ? null : (used10 / 10);
+        const lineCostYen = (used !== null && used > 0)
+          ? Math.round(used * Number(it.costYen || 0))
+          : 0;
+
+        return {
+          id: it.id,
+          name: it.name,
+          unit: it.unit || "本",
+          costYen: Math.round(Number(it.costYen || 0)),
+          min10: it.min10 || 0,
+          category: it.category || null,
+          note: it.note || null,
+          start10: s10,
+          end10: e10,
+          used10,
+          lineCostYen
+        };
+      })
+      .filter(x => (x.start10 || 0) > 0 || x.end10 !== null);
+  }
+
+  function renderEventSnapshotHtml(p){
+    const items = Array.isArray(p?.itemsSnapshot) ? p.itemsSnapshot : [];
+    if(!items.length){
+      return `<div class="small">この宴会は旧保存形式のため、商品明細は残っていません。</div>`;
+    }
+
+    const sorted = [...items].sort((a,b)=>
+      String(a.name || "").localeCompare(String(b.name || ""), "ja")
+    );
+
+    return sorted.map(it => {
+      const s = Number(it.start10 || 0) / 10;
+      const e = (it.end10 === null || it.end10 === undefined) ? null : Number(it.end10 || 0) / 10;
+      const u = (it.used10 === null || it.used10 === undefined) ? null : Number(it.used10 || 0) / 10;
+
+      return `
+        <div class="small mono" style="padding:6px 0; border-top:1px dashed color-mix(in oklab, var(--text) 12%, transparent);">
+          ${escapeHtml(it.name || "—")}
+          / 開始 ${s.toFixed(1)}
+          / 終了 ${e === null ? "—" : e.toFixed(1)}
+          / 使用 ${u === null ? "—" : u.toFixed(1)}
+          / 原価 ${yen(Number(it.lineCostYen || 0))}
+        </div>
+      `;
+    }).join("");
+  }
+
+  async function restoreSavedEventToDraft(docKey){
+    if(mustReload) return alert("②再読み込みが完了するまで操作できません。");
+
+    const u = await getUser();
+    if(!u) return alert("先にログインして");
+
+    const row = events.find(x => x.doc_key === docKey);
+    const p = row?.payload || null;
+    if(!p) return alert("宴会データが見つかりません。");
+
+    if(!hasEventSnapshot(p)){
+      return alert("この宴会は旧保存形式です。概要確認はできますが、商品明細の復元編集はできません。");
+    }
+
+    const newKey = crypto.randomUUID ? crypto.randomUUID() : String(Date.now());
+    const draft = {
+      version:1,
+      stage:"end",
+      meta:{
+        date: p.date || todayISO(),
+        guests: p.guests ?? null,
+        drinkPricePerHeadYen: p.drinkPricePerHeadYen ?? null,
+        salesYen: p.salesYen ?? null,
+        extensionCount: p.extensionCount ?? 0,
+        durationMin: p.durationMin ?? 90,
+        style: p.style || "seated",
+        staff: (p.staff || []).slice(0,2)
+      },
+      start10:{},
+      end10:{},
+      sourceEventKey: docKey,
+      sourceEventUpdatedAt: row.updated_at || null,
+      savedAt: new Date().toISOString(),
+      savedBy: getOrCreateDeviceId()
+    };
+
+    let addedMissing = 0;
+    const currentIds = new Set((master.items || []).map(x => x.id));
+
+    for(const it of (p.itemsSnapshot || [])){
+      draft.start10[it.id] = Number.isFinite(Number(it.start10)) ? Math.max(0, Math.trunc(it.start10)) : 0;
+      draft.end10[it.id] = (it.end10 === null || it.end10 === undefined) ? null : Math.max(0, Math.trunc(it.end10));
+
+      if(!currentIds.has(it.id)){
+        master.items.push({
+          id: it.id,
+          name: it.name || "復元商品",
+          unit: it.unit || "本",
+          costYen: Math.round(Number(it.costYen || 0)),
+          min10: Number.isFinite(Number(it.min10)) ? Math.max(0, Math.trunc(it.min10)) : 0,
+          category: it.category || null,
+          note: it.note || null
+        });
+        currentIds.add(it.id);
+        addedMissing++;
+      }
+    }
+
+    normalizeMaster();
+
+    if(addedMissing > 0){
+      const { error: masterErr } = await sb
+        .from("docs")
+        .upsert({ user_id:u.id, kind:MASTER_KIND, doc_key:"main", payload:master }, { onConflict:"user_id,kind,doc_key" });
+      if(masterErr){
+        log("restoreSavedEventToDraft saveMaster error", masterErr);
+        return alert("復元商品のマスタ反映に失敗: " + masterErr.message);
+      }
+    }
+
+    const { error } = await sb.from("docs").insert({
+      user_id:u.id,
+      kind:DRAFT_KIND,
+      doc_key:newKey,
+      payload:draft
+    });
+
+    if(error){
+      log("restoreSavedEventToDraft error", error);
+      return alert("下書き復元に失敗: " + error.message);
+    }
+
+    await loadDraftList();
+    await switchToDraft(newKey);
+    renderMaster();
+
+    if(addedMissing > 0){
+      alert(`保存済み宴会を下書きへ復元しました。\n現在のマスタに無かった商品 ${addedMissing} 件を復元し、マスタにも同期しました。`);
+    }else{
+      alert("保存済み宴会を下書きへ復元しました。");
+    }
+
+    scrollToMetaCard();
+  }
+
   function renderEventsNow(){
     const box = $("events");
     box.innerHTML = "";
@@ -1847,7 +2010,7 @@
       const date = p.date || "-";
       const guests = p.guests ?? null;
       const cost = Number(p.totalCostYen ?? 0);
-      const sales = (p.salesYen===null || p.salesYen===undefined) ? null : Number(p.salesYen); // ★税抜売上
+      const sales = (p.salesYen===null || p.salesYen===undefined) ? null : Number(p.salesYen);
       const missingEnds = Number(p.missingEnds ?? 0);
       const isComplete = !!p.isComplete;
 
@@ -1867,6 +2030,7 @@
       const armed = (armedDeleteEventKey === e.doc_key);
       const delText = armed ? "もう一度で完全削除" : "削除";
       const delClass = armed ? "danger" : "ghost";
+      const hasSnapshot = hasEventSnapshot(p);
 
       const el = document.createElement("div");
       el.className = "item";
@@ -1881,14 +2045,47 @@
               / 原価率：<span class="mono">${rate===null ? "—" : pct(rate)}</span>
             </div>
             <div class="small mono">key: ${escapeHtml(e.doc_key)}</div>
+            <div class="small">商品明細：${hasSnapshot ? `${(p.itemsSnapshot || []).length}件` : "なし（旧形式）"}</div>
+            ${p.editedFromEventKey ? `<div class="small mono">edited from: ${escapeHtml(p.editedFromEventKey)}</div>` : ``}
           </div>
           <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
             <span class="badge">updated: ${escapeHtml(e.updated_at||"-")}</span>
-            <button data-act="delEvent" data-key="${escapeHtml(e.doc_key)}" class="${delClass}" type="button">${delText}</button>
+            <div class="btnbar" style="margin-top:0; justify-content:flex-end;">
+              <button data-act="editEvent" class="primary" type="button" ${hasSnapshot ? "" : "disabled"}>
+                ${hasSnapshot ? "下書きへ復元" : "旧形式"}
+              </button>
+              <button data-act="delEvent" data-key="${escapeHtml(e.doc_key)}" class="${delClass}" type="button">${delText}</button>
+            </div>
           </div>
         </div>
+
+        ${
+          hasSnapshot
+          ? `
+            <details style="margin-top:10px;">
+              <summary class="small" style="cursor:pointer;">内容詳細を見る</summary>
+              <div class="editBox" style="margin-top:8px;">
+                ${renderEventSnapshotHtml(p)}
+              </div>
+            </details>
+          `
+          : `
+            <div class="small" style="margin-top:8px;">
+              この宴会は旧保存形式なので、商品別の開始/終了在庫は確認できません。
+            </div>
+          `
+        }
+
         ${armed ? `<div class="small" style="margin-top:8px;color:var(--warn);">⚠ 7秒以内にもう一度押すと削除</div>` : ``}
       `;
+
+      el.querySelector('[data-act="editEvent"]')?.addEventListener("click", async () => {
+        if(!hasSnapshot){
+          alert("この宴会は旧保存形式のため復元編集できません。");
+          return;
+        }
+        await restoreSavedEventToDraft(e.doc_key);
+      });
 
       el.querySelector('[data-act="delEvent"]').addEventListener("click", async () => {
         if(mustReload) return alert("②再読み込みが完了するまで操作できません。");
@@ -1948,19 +2145,17 @@
     const a = calcAgg();
     const guests = parseIntSafe($("evGuests").value);
     const per = parseIntSafe($("evDrinkPrice").value);
-
-    // ★税抜売上
     const salesYen = calcNetSalesYen(guests, per);
-
     const ext = Math.max(0, parseIntSafe($("evExt").value) || 0);
     const durationMin = 90 + 30*ext;
+    const itemsSnapshot = buildItemsSnapshot();
 
     return {
-      version:1,
+      version:2,
       date: $("evDate").value || todayISO(),
       guests: guests ?? null,
-      drinkPricePerHeadYen: per ?? null, // 入力は税込のまま保持
-      salesYen, // 税抜で保存
+      drinkPricePerHeadYen: per ?? null,
+      salesYen,
       extensionCount: ext,
       durationMin,
       style: $("evStyle").value || "seated",
@@ -1970,7 +2165,11 @@
       missingEnds: a.missingEnds,
       negativeCount: a.negativeCount,
       isComplete: (a.missingEnds===0),
-      draftKey: currentDraftKey
+      draftKey: currentDraftKey,
+      editedFromEventKey: sourceEventKey || null,
+      start10: { ...start10 },
+      end10: { ...end10 },
+      itemsSnapshot
     };
   }
 
@@ -1985,8 +2184,38 @@
       if(!confirm(`終了未入力が ${payload.missingEnds} 件あります。\n未確定として保存しますか？`)) return;
     }
 
-    const docKey = crypto.randomUUID ? crypto.randomUUID() : (Date.now()+"");
-    const { error } = await sb.from("docs").insert({ user_id:u.id, kind:EVENT_KIND, doc_key:docKey, payload });
+    let mode = "insert";
+    let targetKey = crypto.randomUUID ? crypto.randomUUID() : (Date.now()+"");
+
+    if(sourceEventKey){
+      const overwrite = confirm(
+        "この下書きは保存済み宴会から復元した編集用です。\n\nOK：元の宴会を上書き更新\nキャンセル：新しい宴会として別保存"
+      );
+      if(overwrite){
+        mode = "update";
+        targetKey = sourceEventKey;
+      }
+    }
+
+    let error = null;
+
+    if(mode === "update"){
+      const res = await sb
+        .from("docs")
+        .update({ payload })
+        .eq("kind", EVENT_KIND)
+        .eq("doc_key", targetKey)
+        .eq("user_id", u.id);
+
+      error = res.error;
+    }else{
+      const res = await sb
+        .from("docs")
+        .insert({ user_id:u.id, kind:EVENT_KIND, doc_key:targetKey, payload });
+
+      error = res.error;
+    }
+
     if(error){
       log("finishEvent error", error);
       return alert("保存エラー: " + error.message);
@@ -1998,10 +2227,9 @@
 
     await loadEvents();
     setSyncState("下書き同期：—", "ok");
-    alert("⑧宴会を保存しました。");
+    alert(mode === "update" ? "⑧宴会を上書き保存しました。" : "⑧宴会を保存しました。");
   }
 
-  // ===== Meta reset (2段階) =====
   let metaResetArmed = false;
   let metaResetTimer = null;
 
@@ -2047,7 +2275,6 @@
     alert("③宴会情報をリセットしました。");
   }
 
-  // ===== Realtime（元のまま） =====
   function stopRealtime(){
     if(rtChannel){
       sb.removeChannel(rtChannel);
@@ -2229,20 +2456,17 @@
   }
 
   function bindMainButtons(){
-    // theme
     on("btnTheme", "click", () => {
       const now = document.documentElement.dataset.theme || "light";
       applyTheme(now === "dark" ? "light" : "dark");
     });
 
-    // ② retry
     on("btnReloadRetry", "click", () => {
       if(autoReloadInProgress) return;
       autoReloadInProgress = true;
       reloadAll();
     });
 
-    // manual reload
     on("btnReloadNow", "click", async () => {
       const u = await getUser();
       if(!u) return alert("先にログインしてください");
@@ -2254,7 +2478,6 @@
       setTimeout(reloadAll, 80);
     });
 
-    // login
     on("btnLogin", "click", async () => {
       showLoginAlert("ログイン処理を開始します…", null);
 
@@ -2299,7 +2522,6 @@
       }
     });
 
-    // logout
     on("btnLogout", "click", async () => {
       if(!sb) return;
       stopRealtime();
@@ -2312,7 +2534,6 @@
       alert("ログアウトしました");
     });
 
-    // ===== 下書きボタン =====
     let topDeleteArmed = false;
     let topDeleteTimer = null;
 
@@ -2360,7 +2581,6 @@
       await deleteDraft(currentDraftKey);
     });
 
-    // local cache clear
     on("btnDraftClearLocal", "click", () => {
       if(!currentDraftKey) return alert("対象の下書きがありません。");
       if(!confirm("この端末のローカル退避（復元用）を削除します。\nSupabase側の下書きは削除されません。よろしいですか？")) return;
@@ -2368,7 +2588,6 @@
       alert("ローカル退避を削除しました。");
     });
 
-    // stage seg（自然な挙動）
     on("btnStageStart", "click", () => {
       if(stage === "end") backToStart();
       else $("products")?.scrollIntoView({ behavior:"smooth", block:"start" });
@@ -2378,7 +2597,6 @@
       else $("products")?.scrollIntoView({ behavior:"smooth", block:"start" });
     });
 
-    // bulk fill
     on("btnFillStartMin", "click", () => {
       const items = master.items || [];
       const hasNonZero = items.some(it => (it.min10||0)>0 && (start10[it.id]||0) > 0);
@@ -2390,19 +2608,13 @@
       }
     });
 
-    // flow
     on("btnDraftSave", "click", async () => { if(sb) await saveRemoteDraftNow(false, "manual"); });
     on("btnConfirmStart", "click", confirmStart);
     on("btnBackToStart", "click", backToStart);
     on("btnFinishEvent", "click", finishEvent);
-
-    // ⑥取り消し（③を編集に戻す）
     on("btnUnlockMeta", "click", backToStart);
-
-    // meta reset
     on("btnMetaReset", "click", onMetaResetClick);
 
-    // remote banner
     on("btnApplyRemote", "click", () => {
       if(!pendingRemoteDraft) return hideRemoteBanner();
       applyDraftPayload(pendingRemoteDraft, "バナーから反映");
@@ -2413,7 +2625,6 @@
       setSyncState("下書き同期：ローカル優先（上書き注意）", "run");
     });
 
-    // filter
     on("btnClearFilter", "click", () => {
       $("fFrom").value = "";
       $("fTo").value = "";
@@ -2422,12 +2633,13 @@
     on("fFrom", "change", scheduleEventsRender);
     on("fTo", "change", scheduleEventsRender);
 
-    // dump
     on("btnDump", "click", () => {
-      log("DUMP", { master, currentDraftKey, stage, start10, end10, draftsCount:drafts.length, eventsCount: events.length, draftDirty, lastSyncError });
+      log("DUMP", {
+        master, currentDraftKey, stage, start10, end10, draftsCount:drafts.length, eventsCount: events.length,
+        draftDirty, lastSyncError, sourceEventKey, sourceEventUpdatedAt
+      });
     });
 
-    // meta changes
     ["evDate","evGuests","evDrinkPrice","evExt","evStyle","evStaff"].forEach(id => {
       on(id, "change", () => {
         updateDurationUI();
@@ -2436,7 +2648,6 @@
       });
     });
 
-    // master add/save
     on("btnAddMaster", "click", () => {
       if(mustReload) return alert("②再読み込みが完了するまで操作できません。");
 
@@ -2478,10 +2689,9 @@
       markDraftDirty("master add");
     });
 
-    on("btnSaveMaster", "click", saveMaster);
+    on("btnSaveMaster", "click", () => saveMaster(true));
   }
 
-  // ===== Boot =====
   async function boot(){
     applyTheme(localStorage.getItem(THEME_KEY) || "light");
     refreshNet();
@@ -2506,7 +2716,6 @@
     showLoginAlert("起動完了。ログインしてください。", null);
     setAppState("app: ui ready");
 
-    // Supabase init
     try{
       const loadedFrom = await ensureSupabaseSdk();
       log("supabase sdk loaded", loadedFrom);
